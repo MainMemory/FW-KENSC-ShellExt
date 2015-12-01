@@ -189,6 +189,8 @@ void(*itemargs[])(const wchar_t *) = {
 	comp_nem,
 	decomp_sax,
 	comp_sax,
+	decomp_sax_nosize,
+	comp_sax_nosize,
 	decomp_kosm,
 	comp_kosm,
 	decomp_cmp,
