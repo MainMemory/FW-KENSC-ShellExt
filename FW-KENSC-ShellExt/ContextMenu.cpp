@@ -18,16 +18,18 @@ extern long g_cDllRef;
 
 wchar_t *chgext(const wchar_t *name, const wchar_t *ext)
 {
-	wchar_t *result = new wchar_t[wcslen(name) + 1];
+	wchar_t *result = new wchar_t[MAX_PATH];
+	wcscpy(result, name);
+	result[wcslen(name)] = '\0';
 	PathRenameExtension(result, ext);
 	return result;
 }
 
 void decomp_kos(const wchar_t *in)
 {
-	wchar_t *out = chgext(in, L"unc");
-	ifstream instr(in);
-	fstream outstr(out);
+	wchar_t *out = chgext(in, L".unc");
+	ifstream instr(in, std::ios::in | std::ios::binary);
+	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
 	kosinski::decode(instr, outstr);
 	instr.close();
 	outstr.close();
@@ -36,9 +38,9 @@ void decomp_kos(const wchar_t *in)
 
 void comp_kos(const wchar_t *in)
 {
-	wchar_t *out = chgext(in, L"kos");
-	ifstream instr(in);
-	fstream outstr(out);
+	wchar_t *out = chgext(in, L".kos");
+	ifstream instr(in, std::ios::in | std::ios::binary);
+	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
 	kosinski::encode(instr, outstr);
 	instr.close();
 	outstr.close();
@@ -47,9 +49,9 @@ void comp_kos(const wchar_t *in)
 
 void decomp_eni(const wchar_t *in)
 {
-	wchar_t *out = chgext(in, L"unc");
-	ifstream instr(in);
-	fstream outstr(out);
+	wchar_t *out = chgext(in, L".unc");
+	ifstream instr(in, std::ios::in | std::ios::binary);
+	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
 	enigma::decode(instr, outstr);
 	instr.close();
 	outstr.close();
@@ -58,9 +60,9 @@ void decomp_eni(const wchar_t *in)
 
 void comp_eni(const wchar_t *in)
 {
-	wchar_t *out = chgext(in, L"eni");
-	ifstream instr(in);
-	fstream outstr(out);
+	wchar_t *out = chgext(in, L".eni");
+	ifstream instr(in, std::ios::in | std::ios::binary);
+	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
 	enigma::encode(instr, outstr);
 	instr.close();
 	outstr.close();
@@ -69,9 +71,9 @@ void comp_eni(const wchar_t *in)
 
 void decomp_nem(const wchar_t *in)
 {
-	wchar_t *out = chgext(in, L"unc");
-	ifstream instr(in);
-	fstream outstr(out);
+	wchar_t *out = chgext(in, L".unc");
+	ifstream instr(in, std::ios::in | std::ios::binary);
+	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
 	nemesis::decode(instr, outstr);
 	instr.close();
 	outstr.close();
@@ -80,9 +82,9 @@ void decomp_nem(const wchar_t *in)
 
 void comp_nem(const wchar_t *in)
 {
-	wchar_t *out = chgext(in, L"nem");
-	ifstream instr(in);
-	fstream outstr(out);
+	wchar_t *out = chgext(in, L".nem");
+	ifstream instr(in, std::ios::in | std::ios::binary);
+	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
 	nemesis::encode(instr, outstr);
 	instr.close();
 	outstr.close();
@@ -91,9 +93,9 @@ void comp_nem(const wchar_t *in)
 
 void decomp_sax(const wchar_t *in)
 {
-	wchar_t *out = chgext(in, L"unc");
-	ifstream instr(in);
-	fstream outstr(out);
+	wchar_t *out = chgext(in, L".unc");
+	ifstream instr(in, std::ios::in | std::ios::binary);
+	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
 	saxman::decode(instr, outstr);
 	instr.close();
 	outstr.close();
@@ -102,9 +104,9 @@ void decomp_sax(const wchar_t *in)
 
 void comp_sax(const wchar_t *in)
 {
-	wchar_t *out = chgext(in, L"sax");
-	ifstream instr(in);
-	fstream outstr(out);
+	wchar_t *out = chgext(in, L".sax");
+	ifstream instr(in, std::ios::in | std::ios::binary);
+	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
 	saxman::encode(instr, outstr);
 	instr.close();
 	outstr.close();
@@ -113,12 +115,12 @@ void comp_sax(const wchar_t *in)
 
 void decomp_sax_nosize(const wchar_t *in)
 {
-	wchar_t *out = chgext(in, L"unc");
-	ifstream instr(in);
+	wchar_t *out = chgext(in, L".unc");
+	ifstream instr(in, std::ios::in | std::ios::binary);
 	instr.seekg(0, ifstream::end);
 	auto size = instr.tellg();
 	instr.seekg(0, ifstream::beg);
-	fstream outstr(out);
+	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
 	saxman::decode(instr, outstr, 0, size);
 	instr.close();
 	outstr.close();
@@ -127,9 +129,9 @@ void decomp_sax_nosize(const wchar_t *in)
 
 void comp_sax_nosize(const wchar_t *in)
 {
-	wchar_t *out = chgext(in, L"sax");
-	ifstream instr(in);
-	fstream outstr(out);
+	wchar_t *out = chgext(in, L".sax");
+	ifstream instr(in, std::ios::in | std::ios::binary);
+	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
 	saxman::encode(instr, outstr, false);
 	instr.close();
 	outstr.close();
@@ -138,9 +140,9 @@ void comp_sax_nosize(const wchar_t *in)
 
 void decomp_kosm(const wchar_t *in)
 {
-	wchar_t *out = chgext(in, L"unc");
-	ifstream instr(in);
-	fstream outstr(out);
+	wchar_t *out = chgext(in, L".unc");
+	ifstream instr(in, std::ios::in | std::ios::binary);
+	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
 	kosinski::decode(instr, outstr, 0, true);
 	instr.close();
 	outstr.close();
@@ -149,9 +151,9 @@ void decomp_kosm(const wchar_t *in)
 
 void comp_kosm(const wchar_t *in)
 {
-	wchar_t *out = chgext(in, L"kosm");
-	ifstream instr(in);
-	fstream outstr(out);
+	wchar_t *out = chgext(in, L".kosm");
+	ifstream instr(in, std::ios::in | std::ios::binary);
+	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
 	kosinski::encode(instr, outstr, true);
 	instr.close();
 	outstr.close();
@@ -160,9 +162,9 @@ void comp_kosm(const wchar_t *in)
 
 void decomp_cmp(const wchar_t *in)
 {
-	wchar_t *out = chgext(in, L"unc");
-	ifstream instr(in);
-	fstream outstr(out);
+	wchar_t *out = chgext(in, L".unc");
+	ifstream instr(in, std::ios::in | std::ios::binary);
+	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
 	comper::decode(instr, outstr);
 	instr.close();
 	outstr.close();
@@ -171,9 +173,9 @@ void decomp_cmp(const wchar_t *in)
 
 void comp_cmp(const wchar_t *in)
 {
-	wchar_t *out = chgext(in, L"cmp");
-	ifstream instr(in);
-	fstream outstr(out);
+	wchar_t *out = chgext(in, L".comp");
+	ifstream instr(in, std::ios::in | std::ios::binary);
+	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
 	comper::encode(instr, outstr);
 	instr.close();
 	outstr.close();
