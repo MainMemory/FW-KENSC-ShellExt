@@ -173,7 +173,7 @@ void decomp_cmp(const wchar_t *in)
 
 void comp_cmp(const wchar_t *in)
 {
-	wchar_t *out = chgext(in, L".cmp");
+	wchar_t *out = chgext(in, L".comp");
 	ifstream instr(in, std::ios::in | std::ios::binary);
 	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
 	comper::encode(instr, outstr);
