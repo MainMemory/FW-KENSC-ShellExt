@@ -30,7 +30,6 @@ wchar_t *chgext(const wchar_t *name, const wchar_t *ext)
 {
 	wchar_t *result = new wchar_t[MAX_PATH];
 	wcscpy(result, name);
-	result[wcslen(name)] = '\0';
 	PathRenameExtension(result, ext);
 	return result;
 }
@@ -44,7 +43,7 @@ void do_compression_decompression(const int mode, const wchar_t *in)
 
 	instr.seekg(0, ifstream::end);
 	auto size = instr.tellg();
-	instr.seekg(0, ifstream::beg);
+	instr.seekg(0);
 
 	switch(mode)
 	{
