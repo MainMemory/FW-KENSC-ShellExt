@@ -113,7 +113,7 @@ iteminfo saxmenu[] = {
 	{ -1 }
 };
 defaultmenu(kosm);
-defaultmenu(cmp);
+defaultmenu(comp);
 
 int maxid = curid;
 
@@ -123,7 +123,7 @@ iteminfo rootmenu[] = {
 	{ curid++, L"&Nemesis", nemmenu },
 	{ curid++, L"&Saxman", saxmenu },
 	{ curid++, L"&Moduled Kosinski", kosmmenu },
-	{ curid++, L"&Comper", cmpmenu },
+	{ curid++, L"&Comper", compmenu },
 	{ -1 }
 };
 
