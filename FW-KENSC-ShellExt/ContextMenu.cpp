@@ -16,6 +16,16 @@ using std::fstream;
 extern HINSTANCE g_hInst;
 extern long g_cDllRef;
 
+const wchar_t* fileextentions[] = {
+	L".kos",
+	L".eni",
+	L".nem",
+	L".sax",
+	L".sax",
+	L".kosm",
+	L".comp"
+};
+
 wchar_t *chgext(const wchar_t *name, const wchar_t *ext)
 {
 	wchar_t *result = new wchar_t[MAX_PATH];
@@ -25,179 +35,63 @@ wchar_t *chgext(const wchar_t *name, const wchar_t *ext)
 	return result;
 }
 
-void decomp_kos(const wchar_t *in)
+void do_compression_decompression(const int mode, const wchar_t *in)
 {
-	wchar_t *out = chgext(in, L".unc");
+	const wchar_t* const out = chgext(in, (mode&1) ? fileextentions[mode/2] : L".unc");
 	ifstream instr(in, std::ios::in | std::ios::binary);
 	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
-	kosinski::decode(instr, outstr);
-	instr.close();
-	outstr.close();
 	delete[] out;
-}
 
-void comp_kos(const wchar_t *in)
-{
-	wchar_t *out = chgext(in, L".kos");
-	ifstream instr(in, std::ios::in | std::ios::binary);
-	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
-	kosinski::encode(instr, outstr);
-	instr.close();
-	outstr.close();
-	delete[] out;
-}
-
-void decomp_eni(const wchar_t *in)
-{
-	wchar_t *out = chgext(in, L".unc");
-	ifstream instr(in, std::ios::in | std::ios::binary);
-	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
-	enigma::decode(instr, outstr);
-	instr.close();
-	outstr.close();
-	delete[] out;
-}
-
-void comp_eni(const wchar_t *in)
-{
-	wchar_t *out = chgext(in, L".eni");
-	ifstream instr(in, std::ios::in | std::ios::binary);
-	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
-	enigma::encode(instr, outstr);
-	instr.close();
-	outstr.close();
-	delete[] out;
-}
-
-void decomp_nem(const wchar_t *in)
-{
-	wchar_t *out = chgext(in, L".unc");
-	ifstream instr(in, std::ios::in | std::ios::binary);
-	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
-	nemesis::decode(instr, outstr);
-	instr.close();
-	outstr.close();
-	delete[] out;
-}
-
-void comp_nem(const wchar_t *in)
-{
-	wchar_t *out = chgext(in, L".nem");
-	ifstream instr(in, std::ios::in | std::ios::binary);
-	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
-	nemesis::encode(instr, outstr);
-	instr.close();
-	outstr.close();
-	delete[] out;
-}
-
-void decomp_sax(const wchar_t *in)
-{
-	wchar_t *out = chgext(in, L".unc");
-	ifstream instr(in, std::ios::in | std::ios::binary);
-	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
-	saxman::decode(instr, outstr);
-	instr.close();
-	outstr.close();
-	delete[] out;
-}
-
-void comp_sax(const wchar_t *in)
-{
-	wchar_t *out = chgext(in, L".sax");
-	ifstream instr(in, std::ios::in | std::ios::binary);
-	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
-	saxman::encode(instr, outstr);
-	instr.close();
-	outstr.close();
-	delete[] out;
-}
-
-void decomp_sax_nosize(const wchar_t *in)
-{
-	wchar_t *out = chgext(in, L".unc");
-	ifstream instr(in, std::ios::in | std::ios::binary);
 	instr.seekg(0, ifstream::end);
 	auto size = instr.tellg();
 	instr.seekg(0, ifstream::beg);
-	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
-	saxman::decode(instr, outstr, 0, size);
-	instr.close();
-	outstr.close();
-	delete[] out;
-}
 
-void comp_sax_nosize(const wchar_t *in)
-{
-	wchar_t *out = chgext(in, L".sax");
-	ifstream instr(in, std::ios::in | std::ios::binary);
-	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
-	saxman::encode(instr, outstr, false);
-	instr.close();
-	outstr.close();
-	delete[] out;
+	switch(mode)
+	{
+	case 0:
+		kosinski::decode(instr, outstr);
+		break;
+	case 1:
+		kosinski::encode(instr, outstr);
+		break;
+	case 2:
+		enigma::decode(instr, outstr);
+		break;
+	case 3:
+		enigma::encode(instr, outstr);
+		break;
+	case 4:
+		nemesis::decode(instr, outstr);
+		break;
+	case 5:
+		nemesis::encode(instr, outstr);
+		break;
+	case 6:
+		saxman::decode(instr, outstr);
+		break;
+	case 7:
+		saxman::encode(instr, outstr);
+		break;
+	case 8:
+		saxman::decode(instr, outstr, 0, size);
+		break;
+	case 9:
+		saxman::encode(instr, outstr, false);
+		break;
+	case 10:
+		kosinski::decode(instr, outstr, 0, true);
+		break;
+	case 11:
+		kosinski::encode(instr, outstr, true);
+		break;
+	case 12:
+		comper::decode(instr, outstr);
+		break;
+	case 13:
+		comper::encode(instr, outstr);
+		break;
+	}
 }
-
-void decomp_kosm(const wchar_t *in)
-{
-	wchar_t *out = chgext(in, L".unc");
-	ifstream instr(in, std::ios::in | std::ios::binary);
-	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
-	kosinski::decode(instr, outstr, 0, true);
-	instr.close();
-	outstr.close();
-	delete[] out;
-}
-
-void comp_kosm(const wchar_t *in)
-{
-	wchar_t *out = chgext(in, L".kosm");
-	ifstream instr(in, std::ios::in | std::ios::binary);
-	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
-	kosinski::encode(instr, outstr, true);
-	instr.close();
-	outstr.close();
-	delete[] out;
-}
-
-void decomp_cmp(const wchar_t *in)
-{
-	wchar_t *out = chgext(in, L".unc");
-	ifstream instr(in, std::ios::in | std::ios::binary);
-	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
-	comper::decode(instr, outstr);
-	instr.close();
-	outstr.close();
-	delete[] out;
-}
-
-void comp_cmp(const wchar_t *in)
-{
-	wchar_t *out = chgext(in, L".comp");
-	ifstream instr(in, std::ios::in | std::ios::binary);
-	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
-	comper::encode(instr, outstr);
-	instr.close();
-	outstr.close();
-	delete[] out;
-}
-
-void(*itemargs[])(const wchar_t *) = {
-	decomp_kos,
-	comp_kos,
-	decomp_eni,
-	comp_eni,
-	decomp_nem,
-	comp_nem,
-	decomp_sax,
-	comp_sax,
-	decomp_sax_nosize,
-	comp_sax_nosize,
-	decomp_kosm,
-	comp_kosm,
-	decomp_cmp,
-	comp_cmp
-};
 
 struct iteminfo { int id; wchar_t *text; iteminfo *subitems; };
 
@@ -380,7 +274,7 @@ IFACEMETHODIMP CContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO pici)
 	// extension?
 	if (LOWORD(pici->lpVerb) < maxid)
 		for (auto i = selectedFiles.begin(); i != selectedFiles.end(); i++)
-			itemargs[LOWORD(pici->lpVerb)]((*i).c_str());
+			do_compression_decompression(LOWORD(pici->lpVerb), (*i).c_str());
 	else
 		return E_FAIL;
 	return S_OK;
