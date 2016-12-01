@@ -1,6 +1,6 @@
 /* -*- Mode: C++; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*- */
 /*
- * Copyright (C) Flamewing 2011-2015 <flamewing.sonic@gmail.com>
+ * Copyright (C) Flamewing 2011-2016 <flamewing.sonic@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published
@@ -16,18 +16,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _BITSTREAM_H_
-#define _BITSTREAM_H_
+#ifndef __LIB_BITSTREAM_H
+#define __LIB_BITSTREAM_H
 
 #include <iosfwd>
+#include "bigendian_io.h"
 
 template <typename T>
 class bigendian {
 public:
-	size_t read(std::istream &src) {
+	size_t read(std::istream &src) noexcept {
 		return BigEndian::ReadN<std::istream &, sizeof(T)>(src);
 	}
-	void write(std::ostream &dst, size_t c) {
+	void write(std::ostream &dst, size_t c) noexcept {
 		BigEndian::WriteN<std::ostream &, sizeof(T)>(dst, c);
 	}
 };
@@ -35,16 +36,16 @@ public:
 template <typename T>
 class littleendian {
 public:
-	size_t read(std::istream &src) {
+	size_t read(std::istream &src) noexcept {
 		return LittleEndian::ReadN<std::istream &, sizeof(T)>(src);
 	}
-	void write(std::ostream &dst, size_t c) {
+	void write(std::ostream &dst, size_t c) noexcept {
 		LittleEndian::WriteN<std::ostream &, sizeof(T)>(dst, c);
 	}
 };
 
 template<typename T>
-static T reverseBits(T val) {
+static T reverseBits(T val) noexcept {
 	unsigned int sz = sizeof(T) * 8; // bit size; must be power of 2 
 	T mask = ~0;
 	while ((sz >>= 1) > 0) {
@@ -65,43 +66,48 @@ private:
 	Reader r;
 	int readbits;
 	T bitbuffer;
-	T read_bits() {
+	T read_bits() noexcept {
 		T bits = r.read(src);
 		return LittleEndianBits ? reverseBits(bits) : bits;
 	}
-	void check_buffer() {
-		if (readbits)
+	void check_buffer() noexcept {
+		if (readbits) {
 			return;
+		}
 
 		bitbuffer = read_bits();
-		if (src.good())
+		if (src.good()) {
 			readbits = sizeof(T) * 8;
-		else
+		} else {
 			readbits = 16;
+		}
 	}
 public:
-	ibitstream(std::istream &s) : src(s), readbits(sizeof(T) * 8) {
+	ibitstream(std::istream &s) noexcept : src(s), readbits(sizeof(T) * 8) {
 		bitbuffer = read_bits();
 	}
 	// Gets a single bit from the stream. Remembers previously read bits, and
 	// gets a new T from the actual stream once all bits in the current T has
 	// been used up.
-	T pop() {
-		if (!EarlyRead)
+	T pop() noexcept {
+		if (!EarlyRead) {
 			check_buffer();
+		}
 		--readbits;
 		T bit = (bitbuffer >> readbits) & 1;
 		bitbuffer ^= (bit << readbits);
-		if (EarlyRead)
+		if (EarlyRead) {
 			check_buffer();
+		}
 		return bit;
 	}
 	// Reads up to sizeof(T) * 8 bits from the stream. This remembers previously
 	// read bits, and gets another T from the actual stream once all bits in the
 	// current T have been read.
-	T read(unsigned char cnt) {
-		if (!EarlyRead)
+	T read(unsigned char cnt) noexcept {
+		if (!EarlyRead) {
 			check_buffer();
+		}
 		T bits;
 		if (readbits < cnt) {
 			int delta = (cnt - readbits);
@@ -116,11 +122,12 @@ public:
 			bits = bitbuffer >> readbits;
 			bitbuffer ^= (bits << readbits);
 		}
-		if (EarlyRead)
+		if (EarlyRead) {
 			check_buffer();
+		}
 		return bits;
 	}
-	int have_waiting_bits() const {
+	int have_waiting_bits() const noexcept {
 		return readbits;
 	}
 };
@@ -134,16 +141,16 @@ private:
 	Writer w;
 	unsigned int waitingbits;
 	T bitbuffer;
-	void write_bits(T bits) {
+	void write_bits(T bits) noexcept {
 		w.write(dst, LittleEndianBits ? reverseBits(bits) : bits);
 	}
 public:
-	obitstream(std::ostream &d) : dst(d), waitingbits(0), bitbuffer(0) {
+	obitstream(std::ostream &d) noexcept : dst(d), waitingbits(0), bitbuffer(0) {
 	}
 	// Puts a single bit into the stream. Remembers previously written bits, and
 	// outputs a T to the actual stream once there are at least sizeof(T) * 8
 	// bits stored in the buffer.
-	bool push(T data) {
+	bool push(T data) noexcept {
 		bitbuffer = (bitbuffer << 1) | (data & 1);
 		if (++waitingbits >= sizeof(T) * 8) {
 			write_bits(bitbuffer);
@@ -156,7 +163,7 @@ public:
 	// Writes up to sizeof(T) * 8 bits to the stream. This remembers previously
 	// written bits, and outputs a T to the actual stream once there are at
 	// least sizeof(T) * 8 bits stored in the buffer.
-	bool write(T data, unsigned char size) {
+	bool write(T data, unsigned char size) noexcept {
 		if (waitingbits + size >= sizeof(T) * 8) {
 			int delta = (sizeof(T) * 8 - waitingbits);
 			waitingbits = (waitingbits + size) % (sizeof(T) * 8);
@@ -172,7 +179,7 @@ public:
 	}
 	// Flushes remaining bits (if any) to the buffer, completing the byte by
 	// padding with zeroes.
-	bool flush() {
+	bool flush() noexcept {
 		if (waitingbits) {
 			bitbuffer <<= ((sizeof(T) * 8) - waitingbits);
 			write_bits(bitbuffer);
@@ -181,9 +188,9 @@ public:
 		}
 		return false;
 	}
-	int have_waiting_bits() const {
+	int have_waiting_bits() const noexcept {
 		return waitingbits;
 	}
 };
 
-#endif // _BITSTREAM_H_
+#endif // __LIB_BITSTREAM_H

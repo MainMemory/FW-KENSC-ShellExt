@@ -3,8 +3,8 @@
 #undef max
 /* -*- Mode: C++; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*- */
 /*
- * Copyright (C) Flamewing 2013-2016 <flamewing.sonic@gmail.com>
- *
+ * Copyright (C) Clownacy 2016
+ * Copyright (C) Flamewing 2016 <flamewing.sonic@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published
@@ -24,7 +24,7 @@
 #include <ostream>
 #include <sstream>
 
-#include "comper.h"
+#include "rocket.h"
 #include "bigendian_io.h"
 #include "bitstream.h"
 #include "lzss.h"
@@ -33,37 +33,37 @@
 using namespace std;
 
 template<>
-size_t moduled_comper::PadMaskBits = 1u;
+size_t moduled_rocket::PadMaskBits = 1u;
 
-class comper_internal {
+class rocket_internal {
 	// NOTE: This has to be changed for other LZSS-based compression schemes.
-	struct ComperAdaptor {
-		typedef unsigned short stream_t;
-		typedef unsigned short descriptor_t;
-		typedef bigendian<descriptor_t> descriptor_endian_t;
+	struct RocketAdaptor {
+		typedef unsigned char stream_t;
+		typedef unsigned char descriptor_t;
+		typedef littleendian<descriptor_t> descriptor_endian_t;
 		// Number of bits on descriptor bitfield.
 		constexpr static size_t const NumDescBits = sizeof(descriptor_t) * 8;
 		// Number of bits used in descriptor bitfield to signal the end-of-file
 		// marker sequence.
-		constexpr static size_t const NumTermBits = 1;
+		constexpr static size_t const NumTermBits = 0;
 		// Flag that tells the compressor that new descriptor fields is needed
 		// when a new bit is needed and all bits in the previous one have been
 		// used up.
 		constexpr static bool const NeedEarlyDescriptor = false;
 		// Flag that marks the descriptor bits as being in big-endian bit
 		// order (that is, highest bits come out first).
-		constexpr static bool const DescriptorLittleEndianBits = false;
+		constexpr static bool const DescriptorLittleEndianBits = true;
 		// Size of the search buffer.
-		constexpr static size_t const SearchBufSize = 256;
+		constexpr static size_t const SearchBufSize = 0x400;
 		// Size of the look-ahead buffer.
-		constexpr static size_t const LookAheadBufSize = 256;
+		constexpr static size_t const LookAheadBufSize = 0x40;
 		// Total size of the sliding window.
 		constexpr static size_t const SlidingWindowSize = SearchBufSize + LookAheadBufSize;
 		// Computes the cost of a symbolwise encoding, that is, the cost of encoding
 		// one single symbol..
 		constexpr static size_t symbolwise_weight() noexcept {
-			// Symbolwise match: 1-bit descriptor, 16-bit length.
-			return 1 + 16;
+			// Symbolwise match: 1-bit descriptor, 8-bit length.
+			return 1 + 8;
 		}
 		// Computes the cost of covering all of the "len" vertices starting from
 		// "off" vertices ago, for matches with len > 1.
@@ -72,71 +72,83 @@ class comper_internal {
 		static size_t dictionary_weight(size_t dist, size_t len) noexcept {
 			// Preconditions:
 			// len > 1 && len <= LookAheadBufSize && dist != 0 && dist <= SearchBufSize
-			// Dictionary match: 1-bit descriptor, 8-bit distance, 8-bit length.
+			// Dictionary match: 1-bit descriptor, 10-bit distance, 6-bit length.
 			ignore_unused_variable_warning(dist, len);
-			return 1 + 8 + 8;
+			return 1 + 10 + 6;
 		}
 		// Given an edge, computes how many bits are used in the descriptor field.
 		static size_t desc_bits(AdjListNode const &edge) noexcept {
-			// Comper always uses a single bit descriptor.
+			// Rocket always uses a single bit descriptor.
 			ignore_unused_variable_warning(edge);
 			return 1;
 		}
-		// Comper finds no additional matches over normal LZSS.
+		// Rocket finds no additional matches over normal LZSS.
+		// TODO: Lies. Plane maps rely on the buffer initially containing 0x20's
 		static void extra_matches(stream_t const *data,
-		                                    size_t basenode,
-		                                    size_t ubound, size_t lbound,
-		                                    LZSSGraph<ComperAdaptor>::MatchVector &matches) noexcept {
+			                      size_t basenode,
+			                      size_t ubound, size_t lbound,
+			                      LZSSGraph<RocketAdaptor>::MatchVector &matches) noexcept {
 			ignore_unused_variable_warning(data, basenode, ubound, lbound, matches);
 		}
-		// Comper needs no additional padding at the end-of-file.
+		// Rocket needs no additional padding at the end-of-file.
 		static size_t get_padding(size_t totallen) noexcept {
 			ignore_unused_variable_warning(totallen);
 			return 0;
 		}
 	};
 
-	typedef LZSSGraph<ComperAdaptor> CompGraph;
-	typedef LZSSOStream<ComperAdaptor> CompOStream;
-	typedef LZSSIStream<ComperAdaptor> CompIStream;
+	typedef LZSSGraph<RocketAdaptor> RockGraph;
+	typedef LZSSOStream<RocketAdaptor> RockOStream;
+	typedef LZSSIStream<RocketAdaptor> RockIStream;
 
 public:
-	static void decode(istream &in, iostream &Dst) {
-		CompIStream src(in);
+	static void decode(istream &in, iostream &Dst, unsigned short Size) {
+		RockIStream src(in);
 
-		while (in.good()) {
-			if (!src.descbit()) {
+		// Initialise buffer (needed by Rocket Knight Adventures plane maps)
+		// TODO: Make compressor perform matches for this
+		unsigned char buffer[0x400];
+		for (size_t i = 0; i < 0x3C0; i++) {
+			buffer[i] = 0x20;
+		}
+		size_t buffer_index = 0x3C0;
+
+		while (in.good() && in.tellg() < Size) {
+			if (src.descbit()) {
 				// Symbolwise match.
-				BigEndian::Write2(Dst, BigEndian::Read2(in));
+				unsigned char Byte = Read1(in);
+				Write1(Dst, Byte);
+				buffer[buffer_index++] = Byte;
+				buffer_index &= 0x3FF;
 			} else {
 				// Dictionary match.
 				// Distance and length of match.
-				size_t distance = (0x100 - src.getbyte()) * 2,
-					   length = src.getbyte();
-				if (length == 0) {
-					break;
-				}
+				size_t high = src.getbyte(),
+					   low = src.getbyte();
+
+				size_t length = (high&0xFC)>>2,
+					   index = ((high&3)<<8)|low;
 
 				for (size_t i = 0; i <= length; i++) {
-					size_t Pointer = Dst.tellp();
-					Dst.seekg(Pointer - distance);
-					unsigned short Word = BigEndian::Read2(Dst);
-					Dst.seekp(Pointer);
-					BigEndian::Write2(Dst, Word);
+					unsigned char Byte = buffer[index++];
+					index &= 0x3FF;
+					Write1(Dst, Byte);
+					buffer[buffer_index++] = Byte;
+					buffer_index &= 0x3FF;
 				}
 			}
 		}
 	}
 
-	static void encode(ostream &Dst, unsigned char const *Data, size_t const Size) {
-		// Compute optimal Comper parsing of input file.
-		CompGraph enc(Data, Size);
-		CompGraph::AdjList list = enc.find_optimal_parse();
-		CompOStream out(Dst);
+	static void encode(ostream &Dst, unsigned char const *&Data, size_t const Size) {
+		// Compute optimal Rocket parsing of input file.
+		RockGraph enc(Data, Size);
+		RockGraph::AdjList list = enc.find_optimal_parse();
+		RockOStream out(Dst);
 
 		size_t pos = 0;
 		// Go through each edge in the optimal path.
-		for (CompGraph::AdjList::const_iterator it = list.begin();
+		for (RockGraph::AdjList::const_iterator it = list.begin();
 			    it != list.end(); ++it) {
 			AdjListNode const &edge = *it;
 			size_t len = edge.get_length(), dist = edge.get_distance();
@@ -144,38 +156,45 @@ public:
 			// NOTE: This needs to be changed for other LZSS schemes.
 			if (len == 1) {
 				// Symbolwise match.
-				out.descbit(0);
+				out.descbit(1);
 				out.putbyte(Data[pos]);
-				out.putbyte(Data[pos + 1]);
 			} else {
 				// Dictionary match.
-				out.descbit(1);
-				out.putbyte(-dist);
-				out.putbyte(len - 1);
+				out.descbit(0);
+				unsigned short index = (0x3C0 + pos - dist) & 0x3FF;
+				out.putbyte(((len-1)<<2)|(index>>8));
+				out.putbyte(index);
 			}
 			// Go to next position.
-			pos = edge.get_dest() * 2;
+			pos = edge.get_dest();
 		}
-
-		// Push descriptor for end-of-file marker.
-		out.descbit(1);
-
-		out.putbyte(0);
-		out.putbyte(0);
 	}
 };
 
-bool comper::decode(istream &Src, iostream &Dst) {
+bool rocket::decode(istream &Src, iostream &Dst) {
+	Src.ignore(2);
+	size_t Size = BigEndian::Read2(Src);
+
 	size_t Location = Src.tellg();
 	stringstream in(ios::in | ios::out | ios::binary);
 	extract(Src, in);
 
-	comper_internal::decode(in, Dst);
+	rocket_internal::decode(in, Dst, Size);
 	Src.seekg(Location + in.tellg());
 	return true;
 }
 
-bool comper::encode(ostream &Dst, unsigned char const *data, size_t const Size) {
-	comper_internal::encode(Dst, data, Size);
+bool rocket::encode(ostream &Dst, unsigned char const *data, size_t const Size) {
+	// Internal buffer.
+	stringstream outbuff(ios::in | ios::out | ios::binary);
+	rocket_internal::encode(outbuff, data, Size);
+
+	// Fill in header
+	BigEndian::Write2(Dst, Size);					// Size of decompressed file
+	BigEndian::Write2(Dst, outbuff.tellp());		// Size of compressed file
+
+	outbuff.seekg(0);
+	Dst << outbuff.rdbuf();
+
 	return true;
 }

@@ -1,6 +1,6 @@
 /* -*- Mode: C++; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*- */
 /*
- * Copyright (C) Flamewing 2011-2015 <flamewing.sonic@gmail.com>
+ * Copyright (C) Flamewing 2011-2016 <flamewing.sonic@gmail.com>
  * Loosely based on code by Roger Sanders (AKA Nemesis) and William Sanders
  * (AKA Milamber)
  *
@@ -18,29 +18,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NEMESIS_H_
-#define _NEMESIS_H_
+#ifndef __LIB_NEMESIS_H
+#define __LIB_NEMESIS_H
 
 #include <iosfwd>
-#include <map>
+#include "basic_decoder.h"
+#include "moduled_adaptor.h"
 
-struct Code;
-class nibble_run;
-typedef std::map<Code, nibble_run> CodeNibbleMap;
+class nemesis;
+typedef BasicDecoder<nemesis, false> basic_nemesis;
+typedef ModuledAdaptor<nemesis, 4096u, 1u> moduled_nemesis;
 
-class nemesis {
-private:
-	static void decode_header(std::istream &Src, CodeNibbleMap &codemap);
-	static void decode_internal(std::istream &Src, std::ostream &Dst,
-	                            CodeNibbleMap &codemap, size_t rtiles,
-	                            bool alt_out = false, int *endptr = 0);
-	template<typename Compare>
-	static size_t encode_internal(std::istream &Src, std::ostream &Dst, int mode,
-	                              size_t sz, Compare const &comp);
+class nemesis : public basic_nemesis, public moduled_nemesis {
 public:
-	static bool decode(std::istream &Src, std::ostream &Dst, std::streampos Location = 0,
-	                   int *endptr = 0);
+	static bool decode(std::istream &Src, std::ostream &Dst);
 	static bool encode(std::istream &Src, std::ostream &Dst);
+	static bool encode(std::ostream &Dst, unsigned char const *data, size_t const Size);
 };
 
-#endif // _NEMESIS_H_
+#endif // __LIB_NEMESIS_H

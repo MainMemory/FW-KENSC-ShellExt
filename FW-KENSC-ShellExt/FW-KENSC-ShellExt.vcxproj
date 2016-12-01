@@ -114,6 +114,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;FWKENSCSHELLEXT_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/std:c++latest %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -146,15 +147,20 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="basic_decoder.h" />
     <ClInclude Include="bigendian_io.h" />
     <ClInclude Include="bitstream.h" />
     <ClInclude Include="ClassFactory.h" />
     <ClInclude Include="comper.h" />
     <ClInclude Include="ContextMenu.h" />
     <ClInclude Include="enigma.h" />
+    <ClInclude Include="ignore_unused_variable_warning.h" />
     <ClInclude Include="kosinski.h" />
+    <ClInclude Include="kosplus.h" />
     <ClInclude Include="lzss.h" />
+    <ClInclude Include="moduled_adaptor.h" />
     <ClInclude Include="nemesis.h" />
+    <ClInclude Include="rocket.h" />
     <ClInclude Include="saxman.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -179,7 +185,9 @@
     </ClCompile>
     <ClCompile Include="enigma.cc" />
     <ClCompile Include="kosinski.cc" />
+    <ClCompile Include="kosplus.cc" />
     <ClCompile Include="nemesis.cc" />
+    <ClCompile Include="rocket.cc" />
     <ClCompile Include="saxman.cc" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

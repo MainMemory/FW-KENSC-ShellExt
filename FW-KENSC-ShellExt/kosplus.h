@@ -1,6 +1,6 @@
 /* -*- Mode: C++; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*- */
 /*
- * Copyright (C) Flamewing 2013-2016 <flamewing.sonic@gmail.com>
+ * Copyright (C) Flamewing 2015-2016 <flamewing.sonic@gmail.com>
  *
  *
  * This program is free software: you can redistribute it and/or modify it
@@ -17,22 +17,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __LIB_COMPER_H
-#define __LIB_COMPER_H
+#ifndef __LIB_KOSPLUS_H
+#define __LIB_KOSPLUS_H
 
 #include <iosfwd>
 #include "basic_decoder.h"
 #include "moduled_adaptor.h"
 
-class comper;
-typedef BasicDecoder<comper, true> basic_comper;
-typedef ModuledAdaptor<comper, 4096u, 1u> moduled_comper;
+class kosplus;
+typedef BasicDecoder<kosplus, false> basic_kosplus;
+typedef ModuledAdaptor<kosplus, 4096u, 1u> moduled_kosplus;
 
-class comper : public basic_comper, public moduled_comper {
+class kosplus : public basic_kosplus, public moduled_kosplus {
 public:
-	using basic_comper::encode;
+	using basic_kosplus::encode;
 	static bool decode(std::istream &Src, std::iostream &Dst);
 	static bool encode(std::ostream &Dst, unsigned char const *data, size_t const Size);
 };
 
-#endif // __LIB_COMPER_H
+#endif // __LIB_KOSPLUS_H
