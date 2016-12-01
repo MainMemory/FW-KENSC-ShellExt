@@ -156,6 +156,7 @@
     <ClInclude Include="enigma.h" />
     <ClInclude Include="ignore_unused_variable_warning.h" />
     <ClInclude Include="kosinski.h" />
+    <ClInclude Include="kosplus.h" />
     <ClInclude Include="lzss.h" />
     <ClInclude Include="moduled_adaptor.h" />
     <ClInclude Include="nemesis.h" />
@@ -184,6 +185,7 @@
     </ClCompile>
     <ClCompile Include="enigma.cc" />
     <ClCompile Include="kosinski.cc" />
+    <ClCompile Include="kosplus.cc" />
     <ClCompile Include="nemesis.cc" />
     <ClCompile Include="rocket.cc" />
     <ClCompile Include="saxman.cc" />
