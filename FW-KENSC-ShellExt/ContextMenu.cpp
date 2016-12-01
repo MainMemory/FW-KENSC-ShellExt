@@ -20,13 +20,18 @@ extern long g_cDllRef;
 
 const wchar_t* fileextentions[] = {
 	L".kos",
-	L".eni",
-	L".nem",
-	L".sax",
-	L".sax",
 	L".kosm",
+	L".eni",
+	L".enim",
+	L".nem",
+	L".nemm",
+	L".sax",
+	L".sax",
+	L".saxm",
 	L".comp",
+	L".compm",
 	L".rock",
+	L".rockm",
 	L".kosp",
 	L".kospm"
 };
@@ -59,41 +64,71 @@ void do_compression_decompression(const int mode, const wchar_t *in)
 		kosinski::encode(instr, outstr);
 		break;
 	}
-	// Enigma
 	case 2:
 	{
-		enigma::decode(instr, outstr);
+		kosinski::moduled_decode(instr, outstr);
 		break;
 	}
 	case 3:
 	{
-		enigma::encode(instr, outstr);
+		kosinski::moduled_encode(instr, outstr);
 		break;
 	}
-	// Nemesis
+	// Enigma
 	case 4:
 	{
-		nemesis::decode(instr, outstr);
+		enigma::decode(instr, outstr);
 		break;
 	}
 	case 5:
 	{
+		enigma::encode(instr, outstr);
+		break;
+	}
+	case 6:
+	{
+		enigma::moduled_decode(instr, outstr);
+		break;
+	}
+	case 7:
+	{
+		enigma::moduled_encode(instr, outstr);
+		break;
+	}
+	// Nemesis
+	case 8:
+	{
+		nemesis::decode(instr, outstr);
+		break;
+	}
+	case 9:
+	{
 		nemesis::encode(instr, outstr);
 		break;
 	}
+	case 10:
+	{
+		nemesis::moduled_decode(instr, outstr);
+		break;
+	}
+	case 11:
+	{
+		nemesis::moduled_encode(instr, outstr);
+		break;
+	}
 	// Saxman
-	case 6:
+	case 12:
 	{
 		saxman::decode(instr, outstr);
 		break;
 	}
-	case 7:
+	case 13:
 	{
 		saxman::encode(instr, outstr, true);
 		break;
 	}
 	// Saxman (no size)
-	case 8:
+	case 14:
 	{
 		instr.seekg(0, ifstream::end);
 		auto size = instr.tellg();
@@ -101,62 +136,80 @@ void do_compression_decompression(const int mode, const wchar_t *in)
 		saxman::decode(instr, outstr, size);
 		break;
 	}
-	case 9:
+	case 15:
 	{
 		saxman::encode(instr, outstr, false);
 		break;
 	}
-	// Moduled Kosinski
-	case 10:
-	{
-		kosinski::moduled_decode(instr, outstr);
-		break;
-	}
-	case 11:
-	{
-		kosinski::moduled_encode(instr, outstr);
-		break;
-	}
-	// Comper
-	case 12:
-	{
-		comper::decode(instr, outstr);
-		break;
-	}
-	case 13:
-	{
-		comper::encode(instr, outstr);
-		break;
-	}
-	// Rocket
-	case 14:
-	{
-		rocket::decode(instr, outstr);
-		break;
-	}
-	case 15:
-	{
-		rocket::encode(instr, outstr);
-		break;
-	}
-	// Kosinski Plus
 	case 16:
 	{
-		kosplus::decode(instr, outstr);
+		saxman::moduled_decode(instr, outstr);
 		break;
 	}
 	case 17:
 	{
+		saxman::moduled_encode(instr, outstr);
+		break;
+	}
+	// Comper
+	case 18:
+	{
+		comper::decode(instr, outstr);
+		break;
+	}
+	case 19:
+	{
+		comper::encode(instr, outstr);
+		break;
+	}
+	case 20:
+	{
+		comper::moduled_decode(instr, outstr);
+		break;
+	}
+	case 21:
+	{
+		comper::moduled_encode(instr, outstr);
+		break;
+	}
+	// Rocket
+	case 22:
+	{
+		rocket::decode(instr, outstr);
+		break;
+	}
+	case 23:
+	{
+		rocket::encode(instr, outstr);
+		break;
+	}
+	case 24:
+	{
+		rocket::moduled_decode(instr, outstr);
+		break;
+	}
+	case 25:
+	{
+		rocket::moduled_encode(instr, outstr);
+		break;
+	}
+	// Kosinski Plus
+	case 26:
+	{
+		kosplus::decode(instr, outstr);
+		break;
+	}
+	case 27:
+	{
 		kosplus::encode(instr, outstr);
 		break;
 	}
-	// Moduled Kosinski Plus
-	case 18:
+	case 28:
 	{
 		kosplus::moduled_decode(instr, outstr);
 		break;
 	}
-	case 19:
+	case 29:
 	{
 		kosplus::moduled_encode(instr, outstr);
 		break;
@@ -171,6 +224,8 @@ int curid = 0;
 #define defaultmenu(name) iteminfo name##menu[] = { \
 { curid++, L"&Decompress" }, \
 { curid++, L"&Compress" }, \
+{ curid++, L"Decompress (&Moduled)" }, \
+{ curid++, L"Compress (M&oduled)" }, \
 { -1 } \
 }
 
@@ -182,13 +237,13 @@ iteminfo saxmenu[] = {
 	{ curid++, L"&Compress" },
 	{ curid++, L"Decompress (No Size)" },
 	{ curid++, L"Compress (No Size)" },
+	{ curid++, L"Decompress (&Moduled)" },
+	{ curid++, L"Compress (M&oduled)" },
 	{ -1 }
 };
-defaultmenu(kosm);
 defaultmenu(comp);
 defaultmenu(rock);
 defaultmenu(kosp);
-defaultmenu(kospm);
 
 int maxid = curid;
 
@@ -197,11 +252,9 @@ iteminfo rootmenu[] = {
 	{ curid++, L"&Enigma", enimenu },
 	{ curid++, L"&Nemesis", nemmenu },
 	{ curid++, L"&Saxman", saxmenu },
-	{ curid++, L"&Moduled Kosinski", kosmmenu },
 	{ curid++, L"&Comper", compmenu },
 	{ curid++, L"&Rocket", rockmenu },
 	{ curid++, L"Kosinski &Plus", kospmenu },
-	{ curid++, L"Moduled Kosinski P&lus", kospmmenu },
 	{ -1 }
 };
 
