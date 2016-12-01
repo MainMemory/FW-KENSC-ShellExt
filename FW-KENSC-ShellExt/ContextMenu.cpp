@@ -9,6 +9,7 @@
 #include "nemesis.h"
 #include "saxman.h"
 #include "comper.h"
+#include "rocket.h"
 
 using std::ifstream;
 using std::fstream;
@@ -23,7 +24,8 @@ const wchar_t* fileextentions[] = {
 	L".sax",
 	L".sax",
 	L".kosm",
-	L".comp"
+	L".comp",
+	L".rock"
 };
 
 wchar_t *chgext(const wchar_t *name, const wchar_t *ext)
@@ -123,6 +125,17 @@ void do_compression_decompression(const int mode, const wchar_t *in)
 		comper::encode(instr, outstr);
 		break;
 	}
+	// Rocket
+	case 14:
+	{
+		rocket::decode(instr, outstr);
+		break;
+	}
+	case 15:
+	{
+		rocket::encode(instr, outstr);
+		break;
+	}
 	}
 }
 
@@ -148,6 +161,7 @@ iteminfo saxmenu[] = {
 };
 defaultmenu(kosm);
 defaultmenu(comp);
+defaultmenu(rock);
 
 int maxid = curid;
 
@@ -158,6 +172,7 @@ iteminfo rootmenu[] = {
 	{ curid++, L"&Saxman", saxmenu },
 	{ curid++, L"&Moduled Kosinski", kosmmenu },
 	{ curid++, L"&Comper", compmenu },
+	{ curid++, L"&Rocket", rockmenu },
 	{ -1 }
 };
 
