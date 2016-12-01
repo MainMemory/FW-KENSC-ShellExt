@@ -1,6 +1,6 @@
 /* -*- Mode: C++; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*- */
 /*
- * Copyright (C) Flamewing 2011-2015 <flamewing.sonic@gmail.com>
+ * Copyright (C) Flamewing 2011-2016 <flamewing.sonic@gmail.com>
  * Copyright (C) 2002-2004 The KENS Project Development Team
  * Copyright (C) 2002-2003 Roger Sanders (AKA Nemesis)
  *
@@ -18,18 +18,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _ENIGMA_H_
-#define _ENIGMA_H_
+#ifndef __LIB_ENIGMA_H
+#define __LIB_ENIGMA_H
 
 #include <iosfwd>
+#include "basic_decoder.h"
+#include "moduled_adaptor.h"
 
-class enigma {
-private:
-	static void decode_internal(std::istream &Src, std::ostream &Dst);
-	static void encode_internal(std::istream &Src, std::ostream &Dst);
+class enigma;
+typedef BasicDecoder<enigma, false> basic_enigma;
+typedef ModuledAdaptor<enigma, 4096u, 1u> moduled_enigma;
+
+class enigma : public basic_enigma, public moduled_enigma {
 public:
-	static bool decode(std::istream &Src, std::ostream &Dst, std::streampos Location = 0, bool padding = false);
-	static bool encode(std::istream &Src, std::ostream &Dst, bool padding = false);
+	static bool decode(std::istream &Src, std::ostream &Dst);
+	static bool encode(std::istream &Src, std::ostream &Dst);
+	static bool encode(std::ostream &Dst, unsigned char const *data, size_t const Size);
 };
 
-#endif // _ENIGMA_H_
+#endif // __LIB_ENIGMA_H

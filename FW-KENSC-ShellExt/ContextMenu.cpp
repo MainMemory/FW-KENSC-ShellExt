@@ -36,65 +36,93 @@ wchar_t *chgext(const wchar_t *name, const wchar_t *ext)
 
 void do_compression_decompression(const int mode, const wchar_t *in)
 {
-	const wchar_t* const out = chgext(in, (mode&1) ? fileextentions[mode/2] : L".unc");
+	const wchar_t* const out = chgext(in, (mode & 1) ? fileextentions[mode / 2] : L".unc");
 	ifstream instr(in, std::ios::in | std::ios::binary);
 	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
 	delete[] out;
 
-	switch(mode)
+	switch (mode)
 	{
 	// Kosinski
 	case 0:
+	{
 		kosinski::decode(instr, outstr);
 		break;
+	}
 	case 1:
+	{
 		kosinski::encode(instr, outstr);
 		break;
+	}
 	// Enigma
 	case 2:
+	{
 		enigma::decode(instr, outstr);
 		break;
+	}
 	case 3:
+	{
 		enigma::encode(instr, outstr);
 		break;
+	}
 	// Nemesis
 	case 4:
+	{
 		nemesis::decode(instr, outstr);
 		break;
+	}
 	case 5:
+	{
 		nemesis::encode(instr, outstr);
 		break;
+	}
 	// Saxman
 	case 6:
+	{
 		saxman::decode(instr, outstr);
 		break;
+	}
 	case 7:
-		saxman::encode(instr, outstr);
+	{
+		saxman::encode(instr, outstr, true);
 		break;
+	}
 	// Saxman (no size)
 	case 8:
+	{
 		instr.seekg(0, ifstream::end);
 		auto size = instr.tellg();
 		instr.seekg(0);
-		saxman::decode(instr, outstr, 0, size);
+		saxman::decode(instr, outstr, size);
 		break;
+	}
 	case 9:
+	{
 		saxman::encode(instr, outstr, false);
 		break;
+	}
 	// Moduled Kosinski
 	case 10:
-		kosinski::decode(instr, outstr, 0, true);
+	{
+		kosinski::moduled_decode(instr, outstr);
 		break;
+	}
 	case 11:
-		kosinski::encode(instr, outstr, true);
+	{
+		kosinski::moduled_encode(instr, outstr);
 		break;
+	}
 	// Comper
 	case 12:
+	{
 		comper::decode(instr, outstr);
 		break;
+	}
 	case 13:
+	{
 		comper::encode(instr, outstr);
 		break;
+	}
 	}
 }
 

@@ -54,6 +54,15 @@
     <ClInclude Include="saxman.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="basic_decoder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ignore_unused_variable_warning.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="moduled_adaptor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

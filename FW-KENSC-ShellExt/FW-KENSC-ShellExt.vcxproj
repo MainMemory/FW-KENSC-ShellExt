@@ -147,14 +147,17 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="basic_decoder.h" />
     <ClInclude Include="bigendian_io.h" />
     <ClInclude Include="bitstream.h" />
     <ClInclude Include="ClassFactory.h" />
     <ClInclude Include="comper.h" />
     <ClInclude Include="ContextMenu.h" />
     <ClInclude Include="enigma.h" />
+    <ClInclude Include="ignore_unused_variable_warning.h" />
     <ClInclude Include="kosinski.h" />
     <ClInclude Include="lzss.h" />
+    <ClInclude Include="moduled_adaptor.h" />
     <ClInclude Include="nemesis.h" />
     <ClInclude Include="saxman.h" />
     <ClInclude Include="stdafx.h" />
