@@ -24,49 +24,46 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="bigendian_io.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="bitstream.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ClassFactory.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="comper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ContextMenu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="enigma.h">
+    <ClInclude Include="FW-KENSC\basic_decoder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="kosinski.h">
+    <ClInclude Include="FW-KENSC\bigendian_io.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="lzss.h">
+    <ClInclude Include="FW-KENSC\bitstream.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="nemesis.h">
+    <ClInclude Include="FW-KENSC\comper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="saxman.h">
+    <ClInclude Include="FW-KENSC\enigma.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="basic_decoder.h">
+    <ClInclude Include="FW-KENSC\kosinski.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ignore_unused_variable_warning.h">
+    <ClInclude Include="FW-KENSC\kosplus.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="moduled_adaptor.h">
+    <ClInclude Include="FW-KENSC\lzss.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="rocket.h">
+    <ClInclude Include="FW-KENSC\moduled_adaptor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="kosplus.h">
+    <ClInclude Include="FW-KENSC\nemesis.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FW-KENSC\rocket.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FW-KENSC\saxman.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -80,28 +77,28 @@
     <ClCompile Include="ClassFactory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="comper.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ContextMenu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="enigma.cc">
+    <ClCompile Include="FW-KENSC\comper.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="kosinski.cc">
+    <ClCompile Include="FW-KENSC\enigma.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="nemesis.cc">
+    <ClCompile Include="FW-KENSC\kosinski.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="saxman.cc">
+    <ClCompile Include="FW-KENSC\kosplus.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="rocket.cc">
+    <ClCompile Include="FW-KENSC\nemesis.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="kosplus.cc">
+    <ClCompile Include="FW-KENSC\rocket.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FW-KENSC\saxman.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

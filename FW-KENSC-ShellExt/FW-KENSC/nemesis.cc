@@ -1,6 +1,3 @@
-#include "StdAfx.h"
-#undef min
-#undef max
 /* -*- Mode: C++; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*- */
 /*
  * Copyright (C) Flamewing 2011-2016 <flamewing.sonic@gmail.com>
@@ -35,7 +32,6 @@
 #include "nemesis.h"
 #include "bigendian_io.h"
 #include "bitstream.h"
-#include "ignore_unused_variable_warning.h"
 
 using namespace std;
 
@@ -239,7 +235,6 @@ struct Compare_node {
 	}
 	// Just discard the lowest weighted item.
 	void update(NodeVector &qt, NibbleCodeMap &codes) const noexcept {
-		ignore_unused_variable_warning(codes);
 		pop_heap(qt.begin(), qt.end(), *this);
 		qt.pop_back();
 	}

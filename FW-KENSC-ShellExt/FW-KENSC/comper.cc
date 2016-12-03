@@ -1,6 +1,3 @@
-#include "StdAfx.h"
-#undef min
-#undef max
 /* -*- Mode: C++; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*- */
 /*
  * Copyright (C) Flamewing 2013-2016 <flamewing.sonic@gmail.com>
@@ -28,7 +25,6 @@
 #include "bigendian_io.h"
 #include "bitstream.h"
 #include "lzss.h"
-#include "ignore_unused_variable_warning.h"
 
 using namespace std;
 
@@ -69,29 +65,25 @@ class comper_internal {
 		// "off" vertices ago, for matches with len > 1.
 		// A return of "numeric_limits<size_t>::max()" means "infinite",
 		// or "no edge".
-		static size_t dictionary_weight(size_t dist, size_t len) noexcept {
+		constexpr static size_t dictionary_weight(size_t dist, size_t len) noexcept {
 			// Preconditions:
 			// len > 1 && len <= LookAheadBufSize && dist != 0 && dist <= SearchBufSize
 			// Dictionary match: 1-bit descriptor, 8-bit distance, 8-bit length.
-			ignore_unused_variable_warning(dist, len);
 			return 1 + 8 + 8;
 		}
 		// Given an edge, computes how many bits are used in the descriptor field.
-		static size_t desc_bits(AdjListNode const &edge) noexcept {
+		constexpr static size_t desc_bits(AdjListNode const &edge) noexcept {
 			// Comper always uses a single bit descriptor.
-			ignore_unused_variable_warning(edge);
 			return 1;
 		}
 		// Comper finds no additional matches over normal LZSS.
-		static void extra_matches(stream_t const *data,
+		constexpr static void extra_matches(stream_t const *data,
 		                                    size_t basenode,
 		                                    size_t ubound, size_t lbound,
 		                                    LZSSGraph<ComperAdaptor>::MatchVector &matches) noexcept {
-			ignore_unused_variable_warning(data, basenode, ubound, lbound, matches);
 		}
 		// Comper needs no additional padding at the end-of-file.
-		static size_t get_padding(size_t totallen) noexcept {
-			ignore_unused_variable_warning(totallen);
+		constexpr static size_t get_padding(size_t totallen) noexcept {
 			return 0;
 		}
 	};

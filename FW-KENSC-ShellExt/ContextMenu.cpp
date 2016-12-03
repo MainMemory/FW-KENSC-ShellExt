@@ -4,13 +4,13 @@
 #include <Shlwapi.h>
 #include <Shellapi.h>
 #include "ContextMenu.h"
-#include "kosinski.h"
-#include "enigma.h"
-#include "nemesis.h"
-#include "saxman.h"
-#include "comper.h"
-#include "rocket.h"
-#include "kosplus.h"
+#include "FW-KENSC/kosinski.h"
+#include "FW-KENSC/enigma.h"
+#include "FW-KENSC/nemesis.h"
+#include "FW-KENSC/saxman.h"
+#include "FW-KENSC/comper.h"
+#include "FW-KENSC/rocket.h"
+#include "FW-KENSC/kosplus.h"
 
 using std::ifstream;
 using std::fstream;
