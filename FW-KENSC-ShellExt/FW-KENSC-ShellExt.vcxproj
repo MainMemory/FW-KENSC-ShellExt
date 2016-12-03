@@ -154,7 +154,6 @@
     <ClInclude Include="FW-KENSC\bitstream.h" />
     <ClInclude Include="FW-KENSC\comper.h" />
     <ClInclude Include="FW-KENSC\enigma.h" />
-    <ClInclude Include="FW-KENSC\ignore_unused_variable_warning.h" />
     <ClInclude Include="FW-KENSC\kosinski.h" />
     <ClInclude Include="FW-KENSC\kosplus.h" />
     <ClInclude Include="FW-KENSC\lzss.h" />

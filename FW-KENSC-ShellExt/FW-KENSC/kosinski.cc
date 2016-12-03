@@ -25,7 +25,6 @@
 #include "bigendian_io.h"
 #include "bitstream.h"
 #include "lzss.h"
-#include "ignore_unused_variable_warning.h"
 
 using namespace std;
 
@@ -91,11 +90,10 @@ class kosinski_internal {
 			return edge.get_weight() & 7;
 		}
 		// Kosinski finds no additional matches over normal LZSS.
-		static void extra_matches(stream_t const *data,
+		constexpr static void extra_matches(stream_t const *data,
 		                                    size_t basenode,
 		                                    size_t ubound, size_t lbound,
 		                                    LZSSGraph<KosinskiAdaptor>::MatchVector &matches) noexcept {
-			ignore_unused_variable_warning(data, basenode, ubound, lbound, matches);
 		}
 		// KosinskiM needs to pad each module to a multiple of 16 bytes.
 		static size_t get_padding(size_t totallen) noexcept {

@@ -25,7 +25,6 @@
 #include "bigendian_io.h"
 #include "bitstream.h"
 #include "lzss.h"
-#include "ignore_unused_variable_warning.h"
 
 using namespace std;
 
@@ -93,15 +92,13 @@ class kosplus_internal {
 			return edge.get_weight() & 7;
 		}
 		// KosPlus finds no additional matches over normal LZSS.
-		static void extra_matches(stream_t const *data,
+		constexpr static void extra_matches(stream_t const *data,
 		                                    size_t basenode,
 		                                    size_t ubound, size_t lbound,
 		                                    LZSSGraph<KosPlusAdaptor>::MatchVector &matches) noexcept {
-			ignore_unused_variable_warning(data, basenode, ubound, lbound, matches);
 		}
 		// KosPlusM needs no additional padding at the end-of-file.
-		static size_t get_padding(size_t totallen) noexcept {
-			ignore_unused_variable_warning(totallen);
+		constexpr static size_t get_padding(size_t totallen) noexcept {
 			return 0;
 		}
 	};

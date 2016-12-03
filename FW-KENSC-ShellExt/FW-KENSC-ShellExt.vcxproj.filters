@@ -45,9 +45,6 @@
     <ClInclude Include="FW-KENSC\enigma.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FW-KENSC\ignore_unused_variable_warning.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="FW-KENSC\kosinski.h">
       <Filter>Header Files</Filter>
     </ClInclude>

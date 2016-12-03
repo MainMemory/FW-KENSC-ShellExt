@@ -25,7 +25,6 @@
 #include "bigendian_io.h"
 #include "bitstream.h"
 #include "lzss.h"
-#include "ignore_unused_variable_warning.h"
 
 using namespace std;
 
@@ -66,30 +65,26 @@ class rocket_internal {
 		// "off" vertices ago, for matches with len > 1.
 		// A return of "numeric_limits<size_t>::max()" means "infinite",
 		// or "no edge".
-		static size_t dictionary_weight(size_t dist, size_t len) noexcept {
+		constexpr static size_t dictionary_weight(size_t dist, size_t len) noexcept {
 			// Preconditions:
 			// len > 1 && len <= LookAheadBufSize && dist != 0 && dist <= SearchBufSize
 			// Dictionary match: 1-bit descriptor, 10-bit distance, 6-bit length.
-			ignore_unused_variable_warning(dist, len);
 			return 1 + 10 + 6;
 		}
 		// Given an edge, computes how many bits are used in the descriptor field.
-		static size_t desc_bits(AdjListNode const &edge) noexcept {
+		constexpr static size_t desc_bits(AdjListNode const &edge) noexcept {
 			// Rocket always uses a single bit descriptor.
-			ignore_unused_variable_warning(edge);
 			return 1;
 		}
 		// Rocket finds no additional matches over normal LZSS.
 		// TODO: Lies. Plane maps rely on the buffer initially containing 0x20's
-		static void extra_matches(stream_t const *data,
+		constexpr static void extra_matches(stream_t const *data,
 			                      size_t basenode,
 			                      size_t ubound, size_t lbound,
 			                      LZSSGraph<RocketAdaptor>::MatchVector &matches) noexcept {
-			ignore_unused_variable_warning(data, basenode, ubound, lbound, matches);
 		}
 		// Rocket needs no additional padding at the end-of-file.
-		static size_t get_padding(size_t totallen) noexcept {
-			ignore_unused_variable_warning(totallen);
+		constexpr static size_t get_padding(size_t totallen) noexcept {
 			return 0;
 		}
 	};
