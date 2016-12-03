@@ -1,6 +1,3 @@
-#include "StdAfx.h"
-#undef min
-#undef max
 /* -*- Mode: C++; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*- */
 /*
  * Copyright (C) Clownacy 2016

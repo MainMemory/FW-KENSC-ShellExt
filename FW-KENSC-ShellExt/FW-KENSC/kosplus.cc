@@ -1,10 +1,7 @@
-#include "StdAfx.h"
-#undef min
-#undef max
 /* -*- Mode: C++; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*- */
 /*
- * Copyright (C) Flamewing 2011-2016 <flamewing.sonic@gmail.com>
- * Copyright (C) 2002-2004 The KENS Project Development Team
+ * Copyright (C) Flamewing 2015-2016 <flamewing.sonic@gmail.com>
+ *
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published
@@ -24,7 +21,7 @@
 #include <ostream>
 #include <sstream>
 
-#include "kosinski.h"
+#include "kosplus.h"
 #include "bigendian_io.h"
 #include "bitstream.h"
 #include "lzss.h"
@@ -33,13 +30,13 @@
 using namespace std;
 
 template<>
-size_t moduled_kosinski::PadMaskBits = 1u;
+size_t moduled_kosplus::PadMaskBits = 1u;
 
-class kosinski_internal {
+class kosplus_internal {
 	// NOTE: This has to be changed for other LZSS-based compression schemes.
-	struct KosinskiAdaptor {
-		typedef unsigned char  stream_t;
-		typedef unsigned short descriptor_t;
+	struct KosPlusAdaptor {
+		typedef unsigned char stream_t;
+		typedef unsigned char descriptor_t;
 		typedef littleendian<descriptor_t> descriptor_endian_t;
 		// Number of bits on descriptor bitfield.
 		constexpr static size_t const NumDescBits = sizeof(descriptor_t) * 8;
@@ -48,20 +45,22 @@ class kosinski_internal {
 		constexpr static size_t const NumTermBits = 2;
 		// Flag that tells the compressor that new descriptor fields are needed
 		// as soon as the last bit in the previous one is used up.
-		constexpr static bool const NeedEarlyDescriptor = true;
+		constexpr static bool const NeedEarlyDescriptor = false;
 		// Flag that marks the descriptor bits as being in little-endian bit
 		// order (that is, lowest bits come out first).
-		constexpr static bool const DescriptorLittleEndianBits = true;
+		constexpr static bool const DescriptorLittleEndianBits = false;
 		// Size of the search buffer.
 		constexpr static size_t const SearchBufSize = 8192;
 		// Size of the look-ahead buffer.
-		constexpr static size_t const LookAheadBufSize = 256;
+		constexpr static size_t const LookAheadBufSize = 264;
 		// Total size of the sliding window.
 		constexpr static size_t const SlidingWindowSize = SearchBufSize + LookAheadBufSize;
 		// Computes the cost of a symbolwise encoding, that is, the cost of encoding
 		// one single symbol..
+		// Computes the cost of a symbolwise encoding, that is, the cost of encoding
+		// one single symbol..
 		constexpr static size_t symbolwise_weight() noexcept {
-			// Symbolwise match: 1-bit descriptor, 8-bit length.
+			// Literal: 1-bit descriptor, 8-bit length.
 			return 1 + 8;
 		}
 		// Computes the cost of covering all of the "len" vertices starting from
@@ -70,85 +69,74 @@ class kosinski_internal {
 		// or "no edge".
 		static size_t dictionary_weight(size_t dist, size_t len) noexcept {
 			// Preconditions:
-			// len > 1 && len <= LookAheadBufSize && dist != 0 && dist <= SearchBufSize
+			// len > 1 && len <= szLookAhead && dist != 0 && dist <= szSearchBuffer
 			if (len == 2 && dist > 256) {
 				// Can't represent this except by inlining both nodes.
-				return numeric_limits<size_t>::max();   // "infinite"
+				return numeric_limits<size_t>::max();	// "infinite"
 			} else if (len <= 5 && dist <= 256) {
-				// Inline dictionary match: 2-bit descriptor, 2-bit count, 8-bit distance.
+				// Inline RLE: 2-bit descriptor, 2-bit count, 8-bit distance.
 				return 2 + 2 + 8;
 			} else if (len >= 3 && len <= 9) {
-				// Separate dictionary match, short form: 2-bit descriptor, 13-bit distance,
+				// Separate RLE, short form: 2-bit descriptor, 13-bit distance,
 				// 3-bit length.
 				return 2 + 13 + 3;
-			} else { //if (len >= 3 && len <= 256)
-				// Separate dictionary match, long form: 2-bit descriptor, 13-bit distance,
+			} else { //if (len >= 10 && len <= 264)
+				// Separate RLE, long form: 2-bit descriptor, 13-bit distance,
 				// 3-bit marker (zero), 8-bit length.
 				return 2 + 13 + 8 + 3;
 			}
 		}
 		// Given an edge, computes how many bits are used in the descriptor field.
 		static size_t desc_bits(AdjListNode const &edge) noexcept {
-			// Since Kosinski non-descriptor data is always 1, 2 or 3 bytes in length,
-			// this is a quick way to compute it.
+			// Since KosPlus non-descriptor data is always 1, 2 or 3 bytes, this is
+			// a quick way to compute it.
 			return edge.get_weight() & 7;
 		}
-		// Kosinski finds no additional matches over normal LZSS.
+		// KosPlus finds no additional matches over normal LZSS.
 		static void extra_matches(stream_t const *data,
 		                                    size_t basenode,
 		                                    size_t ubound, size_t lbound,
-		                                    LZSSGraph<KosinskiAdaptor>::MatchVector &matches) noexcept {
+		                                    LZSSGraph<KosPlusAdaptor>::MatchVector &matches) noexcept {
 			ignore_unused_variable_warning(data, basenode, ubound, lbound, matches);
 		}
-		// KosinskiM needs to pad each module to a multiple of 16 bytes.
+		// KosPlusM needs no additional padding at the end-of-file.
 		static size_t get_padding(size_t totallen) noexcept {
-			// Add in the size of the end-of-file marker.
-			size_t padding = totallen + 3 * 8;
-			return ((padding + moduled_kosinski::PadMaskBits) & ~moduled_kosinski::PadMaskBits) - totallen;
+			ignore_unused_variable_warning(totallen);
+			return 0;
 		}
 	};
 
-	typedef LZSSIStream<KosinskiAdaptor> KosIStream;
-	typedef LZSSGraph<KosinskiAdaptor> KosGraph;
-	typedef LZSSOStream<KosinskiAdaptor> KosOStream;
-
 public:
 	static void decode(istream &in, iostream &Dst) {
+		typedef LZSSIStream<KosPlusAdaptor> KosIStream;
+
 		KosIStream src(in);
 
 		while (in.good()) {
 			if (src.descbit()) {
-				// Symbolwise match.
 				Write1(Dst, src.getbyte());
 			} else {
-				// Dictionary matches.
 				// Count and distance
 				size_t Count = 0;
 				size_t distance = 0;
 
 				if (src.descbit()) {
-					// Separate dictionary match.
 					unsigned char Low = src.getbyte(), High = src.getbyte();
 
 					Count = size_t(High & 0x07);
 
 					if (!Count) {
-						// 3-byte dictionary match.
 						Count = src.getbyte();
 						if (!Count) {
 							break;
-						} else if (Count == 1) {
-							continue;
 						}
-						Count += 1;
+						Count += 9;
 					} else {
-						// 2-byte dictionary match.
 						Count += 2;
 					}
 
 					distance = (~size_t(0x1FFF)) | (size_t(0xF8 & High) << 5) | size_t(Low);
 				} else {
-					// Inline dictionary match.
 					unsigned char Low  = src.descbit(),
 						          High = src.descbit();
 
@@ -169,8 +157,11 @@ public:
 		}
 	}
 
-	static void encode(ostream &Dst, unsigned char const *Data, size_t const Size) {
-		// Compute optimal Kosinski parsing of input file.
+	static void encode(ostream &Dst, unsigned char const *&Data, size_t const Size) {
+		typedef LZSSGraph<KosPlusAdaptor> KosGraph;
+		typedef LZSSOStream<KosPlusAdaptor> KosOStream;
+
+		// Compute optimal KosPlus parsing of input file.
 		KosGraph enc(Data, Size);
 		typename KosGraph::AdjList list = enc.find_optimal_parse();
 		KosOStream out(Dst);
@@ -185,12 +176,12 @@ public:
 			// NOTE: This needs to be changed for other LZSS schemes.
 			switch (edge.get_weight()) {
 				case 9:
-					// Symbolwise match.
+					// Literal.
 					out.descbit(1);
 					out.putbyte(Data[pos]);
 					break;
 				case 12:
-					// Inline dictionary match.
+					// Inline RLE.
 					out.descbit(0);
 					out.descbit(0);
 					len -= 2;
@@ -200,21 +191,21 @@ public:
 					break;
 				case 18:
 				case 26: {
-					// Separate dictionary match.
+					// Separate RLE.
 					out.descbit(0);
 					out.descbit(1);
 					dist = (-dist) & 0x1FFF;
 					unsigned short high = (dist >> 5) & 0xF8,
 						           low  = (dist & 0xFF);
 					if (edge.get_weight() == 18) {
-						// 2-byte dictionary match.
+						// 2-byte RLE.
 						out.putbyte(low);
 						out.putbyte(high | (len - 2));
 					} else {
-						// 3-byte dictionary match.
+						// 3-byte RLE.
 						out.putbyte(low);
 						out.putbyte(high);
-						out.putbyte(len - 1);
+						out.putbyte(len - 9);
 					}
 					break;
 				}
@@ -237,19 +228,19 @@ public:
 	}
 };
 
-bool kosinski::decode(istream &Src, iostream &Dst) {
+bool kosplus::decode(istream &Src, iostream &Dst) {
 	size_t Location = Src.tellg();
 	stringstream in(ios::in | ios::out | ios::binary);
 	extract(Src, in);
 
-	kosinski_internal::decode(in, Dst);
+	kosplus_internal::decode(in, Dst);
 
 	Src.seekg(Location + in.tellg());
 	return true;
 }
 
-bool kosinski::encode(ostream &Dst, unsigned char const *data, size_t const Size) {
-	kosinski_internal::encode(Dst, data, Size);
+bool kosplus::encode(ostream &Dst, unsigned char const *data, size_t const Size) {
+	kosplus_internal::encode(Dst, data, Size);
 	// Pad to even size.
 	if ((Dst.tellp() & 1) != 0) {
 		Dst.put(0);

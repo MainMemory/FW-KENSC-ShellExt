@@ -147,27 +147,26 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="basic_decoder.h" />
-    <ClInclude Include="bigendian_io.h" />
-    <ClInclude Include="bitstream.h" />
     <ClInclude Include="ClassFactory.h" />
-    <ClInclude Include="comper.h" />
     <ClInclude Include="ContextMenu.h" />
-    <ClInclude Include="enigma.h" />
-    <ClInclude Include="ignore_unused_variable_warning.h" />
-    <ClInclude Include="kosinski.h" />
-    <ClInclude Include="kosplus.h" />
-    <ClInclude Include="lzss.h" />
-    <ClInclude Include="moduled_adaptor.h" />
-    <ClInclude Include="nemesis.h" />
-    <ClInclude Include="rocket.h" />
-    <ClInclude Include="saxman.h" />
+    <ClInclude Include="FW-KENSC\basic_decoder.h" />
+    <ClInclude Include="FW-KENSC\bigendian_io.h" />
+    <ClInclude Include="FW-KENSC\bitstream.h" />
+    <ClInclude Include="FW-KENSC\comper.h" />
+    <ClInclude Include="FW-KENSC\enigma.h" />
+    <ClInclude Include="FW-KENSC\ignore_unused_variable_warning.h" />
+    <ClInclude Include="FW-KENSC\kosinski.h" />
+    <ClInclude Include="FW-KENSC\kosplus.h" />
+    <ClInclude Include="FW-KENSC\lzss.h" />
+    <ClInclude Include="FW-KENSC\moduled_adaptor.h" />
+    <ClInclude Include="FW-KENSC\nemesis.h" />
+    <ClInclude Include="FW-KENSC\rocket.h" />
+    <ClInclude Include="FW-KENSC\saxman.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ClassFactory.cpp" />
-    <ClCompile Include="comper.cc" />
     <ClCompile Include="ContextMenu.cpp" />
     <ClCompile Include="dllmain.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
@@ -183,12 +182,27 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="enigma.cc" />
-    <ClCompile Include="kosinski.cc" />
-    <ClCompile Include="kosplus.cc" />
-    <ClCompile Include="nemesis.cc" />
-    <ClCompile Include="rocket.cc" />
-    <ClCompile Include="saxman.cc" />
+    <ClCompile Include="FW-KENSC\comper.cc">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="FW-KENSC\enigma.cc">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="FW-KENSC\kosinski.cc">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="FW-KENSC\kosplus.cc">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="FW-KENSC\nemesis.cc">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="FW-KENSC\rocket.cc">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="FW-KENSC\saxman.cc">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
