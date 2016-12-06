@@ -254,7 +254,7 @@ iteminfo rootmenu[] = {
 	{ curid++, L"&Saxman", saxmenu },
 	{ curid++, L"&Comper", compmenu },
 	{ curid++, L"&Rocket", rockmenu },
-	{ curid++, L"Kosinski &Plus", kospmenu },
+	{ curid++, L"Kosinski+", kospmenu },
 	{ -1 }
 };
 
