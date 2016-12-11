@@ -11,6 +11,7 @@
 #include "FW-KENSC/comper.h"
 #include "FW-KENSC/rocket.h"
 #include "FW-KENSC/kosplus.h"
+#include "Twizzler/Twizzler.h"
 
 using std::ifstream;
 using std::fstream;
@@ -33,189 +34,10 @@ const wchar_t* fileextentions[] = {
 	L".rock",
 	L".rockm",
 	L".kosp",
-	L".kospm"
+	L".kospm",
+	L".twiz",
+	L".twim"
 };
-
-wchar_t *chgext(const wchar_t *name, const wchar_t *ext)
-{
-	wchar_t *result = new wchar_t[MAX_PATH];
-	wcscpy(result, name);
-	PathRenameExtension(result, ext);
-	return result;
-}
-
-void do_compression_decompression(const int mode, const wchar_t *in)
-{
-	const wchar_t* const out = chgext(in, (mode & 1) ? fileextentions[mode / 2] : L".unc");
-	ifstream instr(in, std::ios::in | std::ios::binary);
-	fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
-	delete[] out;
-
-	switch (mode)
-	{
-	// Kosinski
-	case 0:
-	{
-		kosinski::decode(instr, outstr);
-		break;
-	}
-	case 1:
-	{
-		kosinski::encode(instr, outstr);
-		break;
-	}
-	case 2:
-	{
-		kosinski::moduled_decode(instr, outstr);
-		break;
-	}
-	case 3:
-	{
-		kosinski::moduled_encode(instr, outstr);
-		break;
-	}
-	// Enigma
-	case 4:
-	{
-		enigma::decode(instr, outstr);
-		break;
-	}
-	case 5:
-	{
-		enigma::encode(instr, outstr);
-		break;
-	}
-	case 6:
-	{
-		enigma::moduled_decode(instr, outstr);
-		break;
-	}
-	case 7:
-	{
-		enigma::moduled_encode(instr, outstr);
-		break;
-	}
-	// Nemesis
-	case 8:
-	{
-		nemesis::decode(instr, outstr);
-		break;
-	}
-	case 9:
-	{
-		nemesis::encode(instr, outstr);
-		break;
-	}
-	case 10:
-	{
-		nemesis::moduled_decode(instr, outstr);
-		break;
-	}
-	case 11:
-	{
-		nemesis::moduled_encode(instr, outstr);
-		break;
-	}
-	// Saxman
-	case 12:
-	{
-		saxman::decode(instr, outstr);
-		break;
-	}
-	case 13:
-	{
-		saxman::encode(instr, outstr, true);
-		break;
-	}
-	// Saxman (no size)
-	case 14:
-	{
-		instr.seekg(0, ifstream::end);
-		auto size = instr.tellg();
-		instr.seekg(0);
-		saxman::decode(instr, outstr, size);
-		break;
-	}
-	case 15:
-	{
-		saxman::encode(instr, outstr, false);
-		break;
-	}
-	case 16:
-	{
-		saxman::moduled_decode(instr, outstr);
-		break;
-	}
-	case 17:
-	{
-		saxman::moduled_encode(instr, outstr);
-		break;
-	}
-	// Comper
-	case 18:
-	{
-		comper::decode(instr, outstr);
-		break;
-	}
-	case 19:
-	{
-		comper::encode(instr, outstr);
-		break;
-	}
-	case 20:
-	{
-		comper::moduled_decode(instr, outstr);
-		break;
-	}
-	case 21:
-	{
-		comper::moduled_encode(instr, outstr);
-		break;
-	}
-	// Rocket
-	case 22:
-	{
-		rocket::decode(instr, outstr);
-		break;
-	}
-	case 23:
-	{
-		rocket::encode(instr, outstr);
-		break;
-	}
-	case 24:
-	{
-		rocket::moduled_decode(instr, outstr);
-		break;
-	}
-	case 25:
-	{
-		rocket::moduled_encode(instr, outstr);
-		break;
-	}
-	// Kosinski Plus
-	case 26:
-	{
-		kosplus::decode(instr, outstr);
-		break;
-	}
-	case 27:
-	{
-		kosplus::encode(instr, outstr);
-		break;
-	}
-	case 28:
-	{
-		kosplus::moduled_decode(instr, outstr);
-		break;
-	}
-	case 29:
-	{
-		kosplus::moduled_encode(instr, outstr);
-		break;
-	}
-	}
-}
 
 struct iteminfo { int id; wchar_t *text; iteminfo *subitems; };
 
@@ -245,6 +67,10 @@ defaultmenu(comp);
 defaultmenu(rock);
 defaultmenu(kosp);
 
+const int END_OF_FW_KENSC = curid;
+
+defaultmenu(twiz);
+
 int maxid = curid;
 
 iteminfo rootmenu[] = {
@@ -255,8 +81,237 @@ iteminfo rootmenu[] = {
 	{ curid++, L"&Comper", compmenu },
 	{ curid++, L"&Rocket", rockmenu },
 	{ curid++, L"Kosinski+", kospmenu },
+	{ curid++, L"Twizzler", twizmenu },
 	{ -1 }
 };
+
+wchar_t *chgext(const wchar_t *name, const wchar_t *ext)
+{
+	wchar_t *result = new wchar_t[MAX_PATH];
+	wcscpy(result, name);
+	PathRenameExtension(result, ext);
+	return result;
+}
+
+void do_compression_decompression(const int mode, const wchar_t *in)
+{
+	const wchar_t* const out = chgext(in, (mode & 1) ? fileextentions[mode / 2] : L".unc");
+
+	// FW-KENSC and Twizzler have different ways of being called
+	if (mode < END_OF_FW_KENSC)
+	{
+		ifstream instr(in, std::ios::in | std::ios::binary);
+		fstream outstr(out, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
+		delete[] out;
+		switch (mode)
+		{
+			// Kosinski
+		case 0:
+		{
+			kosinski::decode(instr, outstr);
+			break;
+		}
+		case 1:
+		{
+			kosinski::encode(instr, outstr);
+			break;
+		}
+		case 2:
+		{
+			kosinski::moduled_decode(instr, outstr);
+			break;
+		}
+		case 3:
+		{
+			kosinski::moduled_encode(instr, outstr);
+			break;
+		}
+		// Enigma
+		case 4:
+		{
+			enigma::decode(instr, outstr);
+			break;
+		}
+		case 5:
+		{
+			enigma::encode(instr, outstr);
+			break;
+		}
+		case 6:
+		{
+			enigma::moduled_decode(instr, outstr);
+			break;
+		}
+		case 7:
+		{
+			enigma::moduled_encode(instr, outstr);
+			break;
+		}
+		// Nemesis
+		case 8:
+		{
+			nemesis::decode(instr, outstr);
+			break;
+		}
+		case 9:
+		{
+			nemesis::encode(instr, outstr);
+			break;
+		}
+		case 10:
+		{
+			nemesis::moduled_decode(instr, outstr);
+			break;
+		}
+		case 11:
+		{
+			nemesis::moduled_encode(instr, outstr);
+			break;
+		}
+		// Saxman
+		case 12:
+		{
+			saxman::decode(instr, outstr);
+			break;
+		}
+		case 13:
+		{
+			saxman::encode(instr, outstr, true);
+			break;
+		}
+		// Saxman (no size)
+		case 14:
+		{
+			instr.seekg(0, ifstream::end);
+			auto size = instr.tellg();
+			instr.seekg(0);
+			saxman::decode(instr, outstr, size);
+			break;
+		}
+		case 15:
+		{
+			saxman::encode(instr, outstr, false);
+			break;
+		}
+		case 16:
+		{
+			saxman::moduled_decode(instr, outstr);
+			break;
+		}
+		case 17:
+		{
+			saxman::moduled_encode(instr, outstr);
+			break;
+		}
+		// Comper
+		case 18:
+		{
+			comper::decode(instr, outstr);
+			break;
+		}
+		case 19:
+		{
+			comper::encode(instr, outstr);
+			break;
+		}
+		case 20:
+		{
+			comper::moduled_decode(instr, outstr);
+			break;
+		}
+		case 21:
+		{
+			comper::moduled_encode(instr, outstr);
+			break;
+		}
+		// Rocket
+		case 22:
+		{
+			rocket::decode(instr, outstr);
+			break;
+		}
+		case 23:
+		{
+			rocket::encode(instr, outstr);
+			break;
+		}
+		case 24:
+		{
+			rocket::moduled_decode(instr, outstr);
+			break;
+		}
+		case 25:
+		{
+			rocket::moduled_encode(instr, outstr);
+			break;
+		}
+		// Kosinski Plus
+		case 26:
+		{
+			kosplus::decode(instr, outstr);
+			break;
+		}
+		case 27:
+		{
+			kosplus::encode(instr, outstr);
+			break;
+		}
+		case 28:
+		{
+			kosplus::moduled_decode(instr, outstr);
+			break;
+		}
+		case 29:
+		{
+			kosplus::moduled_encode(instr, outstr);
+			break;
+		}
+		}
+	}
+	else
+	{
+		FILE *infile = _wfopen(in, L"rb");
+		fseek(infile, 0, SEEK_END);
+		int filesize = ftell(infile);
+		rewind(infile);
+
+		char *buffer = (char*)malloc(filesize);
+
+		for (int i = 0; i < filesize; ++i)
+		{
+			buffer[i] = fgetc(infile);
+		}
+		fclose(infile);
+
+		switch (mode)
+		{
+		case 30:
+		case 32:
+		{
+			TwizDec(buffer, filesize);
+			break;
+		}
+		case 31:
+		{
+			TwizComp(buffer, filesize);
+			break;
+		}
+		case 33:
+		{
+			TwizComp(buffer, filesize, true, 0x1000);
+			break;
+		}
+		}
+
+		FILE *outfile = _wfopen(out, L"wb");
+		delete[] out;
+		for (int i = 0; i < filesize; ++i)
+		{
+			fputc(buffer[i], outfile);
+		}
+		fclose(outfile);
+	}
+}
 
 CContextMenu::CContextMenu(void) : m_cRef(1)
 {
