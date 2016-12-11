@@ -528,13 +528,11 @@ void TwizComp (char *&Input, int &InputSize, bool moduled = false, int module_si
 	int HuffRetLoc;
 	int HuffRetSize;
 	int HuffRetBest;
-	const int *HuffRetPrev;
 	const int *HuffRetOff;
 
 	int HuffCopyLoc;
 	int HuffCopySize;
 	int HuffCopyBest;
-	const int *HuffCopyPrev;
 	const int *HuffCopyOff;
 
 	int OutputSize;
@@ -1150,7 +1148,6 @@ void TwizDec (char *&Input, int &InputSize)
 	int CountCur;
 	int LimitBit;
 	int Count, Offset;
-	char Byte;
 	char BitCount = 0x09;
 	char BitField = *InputAccess++;
 	int HuffRetOrder [HUFFRET_BITSIZE];
