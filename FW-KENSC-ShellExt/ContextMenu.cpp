@@ -23,9 +23,7 @@ const wchar_t* fileextentions[] = {
 	L".kos",
 	L".kosm",
 	L".eni",
-	L".enim",
 	L".nem",
-	L".nemm",
 	L".sax",
 	L".sax",
 	L".saxm",
@@ -46,12 +44,18 @@ int curid = 0;
 #define defaultmenu(name) iteminfo name##menu[] = { \
 { curid++, L"&Decompress" }, \
 { curid++, L"&Compress" }, \
+{ -1 } \
+}
+
+#define moduledmenu(name) iteminfo name##menu[] = { \
+{ curid++, L"&Decompress" }, \
+{ curid++, L"&Compress" }, \
 { curid++, L"Decompress (&Moduled)" }, \
 { curid++, L"Compress (M&oduled)" }, \
 { -1 } \
 }
 
-defaultmenu(kos);
+moduledmenu(kos);
 defaultmenu(eni);
 defaultmenu(nem);
 iteminfo saxmenu[] = {
@@ -63,9 +67,9 @@ iteminfo saxmenu[] = {
 	{ curid++, L"Compress (M&oduled)" },
 	{ -1 }
 };
-defaultmenu(comp);
-defaultmenu(rock);
-defaultmenu(kosp);
+moduledmenu(comp);
+moduledmenu(rock);
+moduledmenu(kosp);
 
 const int END_OF_FW_KENSC = curid;
 
@@ -137,50 +141,30 @@ void do_compression_decompression(const int mode, const wchar_t *in)
 			enigma::encode(instr, outstr);
 			break;
 		}
-		case 6:
-		{
-			enigma::moduled_decode(instr, outstr);
-			break;
-		}
-		case 7:
-		{
-			enigma::moduled_encode(instr, outstr);
-			break;
-		}
 		// Nemesis
-		case 8:
+		case 6:
 		{
 			nemesis::decode(instr, outstr);
 			break;
 		}
-		case 9:
+		case 7:
 		{
 			nemesis::encode(instr, outstr);
 			break;
 		}
-		case 10:
-		{
-			nemesis::moduled_decode(instr, outstr);
-			break;
-		}
-		case 11:
-		{
-			nemesis::moduled_encode(instr, outstr);
-			break;
-		}
 		// Saxman
-		case 12:
+		case 8:
 		{
 			saxman::decode(instr, outstr);
 			break;
 		}
-		case 13:
+		case 9:
 		{
 			saxman::encode(instr, outstr, true);
 			break;
 		}
 		// Saxman (no size)
-		case 14:
+		case 10:
 		{
 			instr.seekg(0, ifstream::end);
 			auto size = instr.tellg();
@@ -188,80 +172,80 @@ void do_compression_decompression(const int mode, const wchar_t *in)
 			saxman::decode(instr, outstr, size);
 			break;
 		}
-		case 15:
+		case 11:
 		{
 			saxman::encode(instr, outstr, false);
 			break;
 		}
-		case 16:
+		case 12:
 		{
 			saxman::moduled_decode(instr, outstr);
 			break;
 		}
-		case 17:
+		case 13:
 		{
 			saxman::moduled_encode(instr, outstr);
 			break;
 		}
 		// Comper
-		case 18:
+		case 14:
 		{
 			comper::decode(instr, outstr);
 			break;
 		}
-		case 19:
+		case 15:
 		{
 			comper::encode(instr, outstr);
 			break;
 		}
-		case 20:
+		case 16:
 		{
 			comper::moduled_decode(instr, outstr);
 			break;
 		}
-		case 21:
+		case 17:
 		{
 			comper::moduled_encode(instr, outstr);
 			break;
 		}
 		// Rocket
-		case 22:
+		case 18:
 		{
 			rocket::decode(instr, outstr);
 			break;
 		}
-		case 23:
+		case 19:
 		{
 			rocket::encode(instr, outstr);
 			break;
 		}
-		case 24:
+		case 20:
 		{
 			rocket::moduled_decode(instr, outstr);
 			break;
 		}
-		case 25:
+		case 21:
 		{
 			rocket::moduled_encode(instr, outstr);
 			break;
 		}
 		// Kosinski Plus
-		case 26:
+		case 22:
 		{
 			kosplus::decode(instr, outstr);
 			break;
 		}
-		case 27:
+		case 23:
 		{
 			kosplus::encode(instr, outstr);
 			break;
 		}
-		case 28:
+		case 24:
 		{
 			kosplus::moduled_decode(instr, outstr);
 			break;
 		}
-		case 29:
+		case 25:
 		{
 			kosplus::moduled_encode(instr, outstr);
 			break;
@@ -285,18 +269,18 @@ void do_compression_decompression(const int mode, const wchar_t *in)
 
 		switch (mode)
 		{
-		case 30:
-		case 32:
+		case 26:
+		case 28:
 		{
 			TwizDec(buffer, filesize);
 			break;
 		}
-		case 31:
+		case 27:
 		{
 			TwizComp(buffer, filesize);
 			break;
 		}
-		case 33:
+		case 29:
 		{
 			TwizComp(buffer, filesize, true, 0x1000);
 			break;
