@@ -7,7 +7,7 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{2D45BECF-09BF-42A8-9ED2-1BFC6B197F07}
 AppName=FW-KENSC
-AppVersion=1.1
+AppVersion=1.1.1
 ;AppVerName=FW-KENSC 1.0
 AppPublisher=Sonic Retro
 AppPublisherURL=http://sonicretro.org/
@@ -15,7 +15,7 @@ AppSupportURL=http://sonicretro.org/
 AppUpdatesURL=http://sonicretro.org/
 DefaultDirName={pf}\FW-KENSC
 AllowNoIcons=yes
-OutputBaseFilename=FW-KENSC-setup-1.1
+OutputBaseFilename=FW-KENSC-setup-1.1.1
 Compression=lzma
 SolidCompression=yes
 ArchitecturesInstallIn64BitMode=x64
