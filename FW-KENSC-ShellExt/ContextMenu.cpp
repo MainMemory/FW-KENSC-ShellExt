@@ -26,7 +26,6 @@ const wchar_t* fileextentions[] = {
 	L".nem",
 	L".sax",
 	L".sax",
-	L".saxm",
 	L".comp",
 	L".compm",
 	L".rock",
@@ -63,8 +62,6 @@ iteminfo saxmenu[] = {
 	{ curid++, L"&Compress" },
 	{ curid++, L"Decompress (No Size)" },
 	{ curid++, L"Compress (No Size)" },
-	{ curid++, L"Decompress (&Moduled)" },
-	{ curid++, L"Compress (M&oduled)" },
 	{ -1 }
 };
 moduledmenu(comp);
@@ -73,7 +70,7 @@ moduledmenu(kosp);
 
 const int END_OF_FW_KENSC = curid;
 
-defaultmenu(twiz);
+moduledmenu(twiz);
 
 int maxid = curid;
 
@@ -177,75 +174,65 @@ void do_compression_decompression(const int mode, const wchar_t *in)
 			saxman::encode(instr, outstr, false);
 			break;
 		}
-		case 12:
-		{
-			saxman::moduled_decode(instr, outstr);
-			break;
-		}
-		case 13:
-		{
-			saxman::moduled_encode(instr, outstr);
-			break;
-		}
 		// Comper
-		case 14:
+		case 12:
 		{
 			comper::decode(instr, outstr);
 			break;
 		}
-		case 15:
+		case 13:
 		{
 			comper::encode(instr, outstr);
 			break;
 		}
-		case 16:
+		case 14:
 		{
 			comper::moduled_decode(instr, outstr);
 			break;
 		}
-		case 17:
+		case 15:
 		{
 			comper::moduled_encode(instr, outstr);
 			break;
 		}
 		// Rocket
-		case 18:
+		case 16:
 		{
 			rocket::decode(instr, outstr);
 			break;
 		}
-		case 19:
+		case 17:
 		{
 			rocket::encode(instr, outstr);
 			break;
 		}
-		case 20:
+		case 18:
 		{
 			rocket::moduled_decode(instr, outstr);
 			break;
 		}
-		case 21:
+		case 19:
 		{
 			rocket::moduled_encode(instr, outstr);
 			break;
 		}
 		// Kosinski Plus
-		case 22:
+		case 20:
 		{
 			kosplus::decode(instr, outstr);
 			break;
 		}
-		case 23:
+		case 21:
 		{
 			kosplus::encode(instr, outstr);
 			break;
 		}
-		case 24:
+		case 22:
 		{
 			kosplus::moduled_decode(instr, outstr);
 			break;
 		}
-		case 25:
+		case 23:
 		{
 			kosplus::moduled_encode(instr, outstr);
 			break;
@@ -269,18 +256,18 @@ void do_compression_decompression(const int mode, const wchar_t *in)
 
 		switch (mode)
 		{
+		case 24:
 		case 26:
-		case 28:
 		{
 			TwizDec(buffer, filesize);
 			break;
 		}
-		case 27:
+		case 25:
 		{
 			TwizComp(buffer, filesize);
 			break;
 		}
-		case 29:
+		case 27:
 		{
 			TwizComp(buffer, filesize, true, 0x1000);
 			break;
