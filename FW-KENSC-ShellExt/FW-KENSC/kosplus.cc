@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <cstdint>
 #include <istream>
 #include <ostream>
 #include <sstream>
@@ -34,9 +35,9 @@ size_t moduled_kosplus::PadMaskBits = 1u;
 class kosplus_internal {
 	// NOTE: This has to be changed for other LZSS-based compression schemes.
 	struct KosPlusAdaptor {
-		typedef unsigned char stream_t;
-		typedef unsigned char descriptor_t;
-		typedef littleendian<descriptor_t> descriptor_endian_t;
+		using stream_t = unsigned char;
+		using descriptor_t = unsigned char;
+		using descriptor_endian_t = littleendian<descriptor_t>;
 		// Number of bits on descriptor bitfield.
 		constexpr static size_t const NumDescBits = sizeof(descriptor_t) * 8;
 		// Number of bits used in descriptor bitfield to signal the end-of-file
@@ -105,35 +106,41 @@ class kosplus_internal {
 
 public:
 	static void decode(istream &in, iostream &Dst) {
-		typedef LZSSIStream<KosPlusAdaptor> KosIStream;
+		using KosIStream = LZSSIStream<KosPlusAdaptor>;
 
 		KosIStream src(in);
 
 		while (in.good()) {
-			if (src.descbit()) {
+			if (src.descbit() != 0u) {
+				// Symbolwise match.
 				Write1(Dst, src.getbyte());
 			} else {
+				// Dictionary matches.
 				// Count and distance
 				size_t Count = 0;
 				size_t distance = 0;
 
-				if (src.descbit()) {
+				if (src.descbit() != 0u) {
+					// Separate dictionary match.
 					unsigned char Low = src.getbyte(), High = src.getbyte();
 
 					Count = size_t(High & 0x07);
 
-					if (!Count) {
+					if (Count == 0u) {
+						// 3-byte dictionary match.
 						Count = src.getbyte();
-						if (!Count) {
+						if (Count == 0u) {
 							break;
 						}
 						Count += 9;
 					} else {
+						// 2-byte dictionary match.
 						Count += 2;
 					}
 
 					distance = (~size_t(0x1FFF)) | (size_t(0xF8 & High) << 5) | size_t(Low);
 				} else {
+					// Inline dictionary match.
 					unsigned char Low  = src.descbit(),
 						          High = src.descbit();
 
@@ -155,8 +162,8 @@ public:
 	}
 
 	static void encode(ostream &Dst, unsigned char const *&Data, size_t const Size) {
-		typedef LZSSGraph<KosPlusAdaptor> KosGraph;
-		typedef LZSSOStream<KosPlusAdaptor> KosOStream;
+		using KosGraph = LZSSGraph<KosPlusAdaptor>;
+		using KosOStream = LZSSOStream<KosPlusAdaptor>;
 
 		// Compute optimal KosPlus parsing of input file.
 		KosGraph enc(Data, Size);
@@ -173,12 +180,12 @@ public:
 			// NOTE: This needs to be changed for other LZSS schemes.
 			switch (edge.get_weight()) {
 				case 9:
-					// Literal.
+					// Symbolwise match.
 					out.descbit(1);
 					out.putbyte(Data[pos]);
 					break;
 				case 12:
-					// Inline RLE.
+					// Inline dictionary match.
 					out.descbit(0);
 					out.descbit(0);
 					len -= 2;
@@ -188,18 +195,18 @@ public:
 					break;
 				case 18:
 				case 26: {
-					// Separate RLE.
+					// Separate dictionary match.
 					out.descbit(0);
 					out.descbit(1);
 					dist = (-dist) & 0x1FFF;
-					unsigned short high = (dist >> 5) & 0xF8,
-						           low  = (dist & 0xFF);
+					uint16_t high = (dist >> 5) & 0xF8,
+					         low  = (dist & 0xFF);
 					if (edge.get_weight() == 18) {
-						// 2-byte RLE.
+						// 2-byte dictionary match.
 						out.putbyte(low);
 						out.putbyte(high | (len - 2));
 					} else {
-						// 3-byte RLE.
+						// 3-byte dictionary match.
 						out.putbyte(low);
 						out.putbyte(high);
 						out.putbyte(len - 9);
@@ -238,9 +245,5 @@ bool kosplus::decode(istream &Src, iostream &Dst) {
 
 bool kosplus::encode(ostream &Dst, unsigned char const *data, size_t const Size) {
 	kosplus_internal::encode(Dst, data, Size);
-	// Pad to even size.
-	if ((Dst.tellp() & 1) != 0) {
-		Dst.put(0);
-	}
 	return true;
 }

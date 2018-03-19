@@ -18,16 +18,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <istream>
-#include <ostream>
-#include <sstream>
-#include <map>
-#include <memory>
-#include <string>
-#include <set>
-#include <vector>
 #include <algorithm>
 #include <iostream>
+#include <istream>
+#include <map>
+#include <memory>
+#include <ostream>
+#include <set>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include "enigma.h"
 #include "bigendian_io.h"
@@ -36,15 +36,20 @@
 using namespace std;
 
 template<>
-size_t moduled_enigma::PadMaskBits = 1u;
+size_t moduled_enigma::PadMaskBits = 0;
 
-typedef ibitstream<unsigned short, true> EniIBitstream;
-typedef obitstream<unsigned short> EniOBitstream;
+using EniIBitstream = ibitstream<uint16_t, true>;
+using EniOBitstream = obitstream<uint16_t>;
 
 // Pure virtual base class.
 class base_flag_io {
 public:
-	virtual ~base_flag_io() {}
+	base_flag_io() noexcept = default;
+	base_flag_io(base_flag_io const &other) noexcept = default;
+	base_flag_io(base_flag_io &&other) noexcept = default;
+	base_flag_io &operator=(base_flag_io const &other) noexcept = default;
+	base_flag_io &operator=(base_flag_io &&other) noexcept = default;
+	virtual ~base_flag_io() = default;
 	static unique_ptr<base_flag_io> create(size_t n);
 	virtual unsigned short read_bitfield(EniIBitstream &bits) const = 0;
 	virtual void write_bitfield(EniOBitstream &bits, unsigned short flags) const = 0;
@@ -170,12 +175,12 @@ static inline unsigned char slog2(unsigned short v) {
 	unsigned char r; // result of slog2(v) will go here
 	unsigned char shift;
 
-	r = (v > 0xFF) << 3;
+	r = static_cast<int>(v > 0xFF) << 3;
 	v >>= r;
-	shift = (v > 0xF) << 2;
+	shift = static_cast<int>(v > 0xF) << 2;
 	v >>= shift;
 	r |= shift;
-	shift = (v > 0x3) << 1;
+	shift = static_cast<int>(v > 0x3) << 1;
 	v >>= shift;
 	r |= shift;
 	r |= (v >> 1);
@@ -195,7 +200,7 @@ static inline void flush_buffer(vector<unsigned short> &buf,
                                 EniOBitstream &bits,
                                 unique_ptr<base_flag_io> &mask,
                                 unsigned short const packet_length) {
-	if (!buf.size()) {
+	if (buf.empty()) {
 		return;
 	}
 
@@ -221,14 +226,14 @@ public:
 		size_t const common_value = BigEndian::Read2(in);
 
 		ibitstream<unsigned short, true> bits(in);
+		static int modeDeltaLUT[] = {0, 1, -1};
 
 		// Lets put in a safe termination condition here.
 		while (in.good()) {
-			if (bits.pop()) {
+			if (bits.pop() != 0u) {
 				int mode = bits.read(2);
 				switch (mode) {
 					case 2:
-						mode = -1;
 					case 1:
 					case 0: {
 						size_t cnt = bits.read(4) + 1;
@@ -238,7 +243,7 @@ public:
 
 						for (size_t i = 0; i < cnt; i++) {
 							BigEndian::Write2(Dst, outv);
-							outv += mode;
+							outv += modeDeltaLUT[mode];
 						}
 						break;
 					}
@@ -259,7 +264,7 @@ public:
 					}
 				}
 			} else {
-				if (!bits.pop()) {
+				if (bits.pop() == 0u) {
 					size_t cnt = bits.read(4) + 1;
 					for (size_t i = 0; i < cnt; i++) {
 						BigEndian::Write2(Dst, incrementing_value++);
@@ -418,10 +423,6 @@ bool enigma::decode(istream &Src, ostream &Dst) {
 
 bool enigma::encode(istream &Src, ostream &Dst) {
 	enigma_internal::encode(Src, Dst);
-	// Pad to even size.
-	if ((Dst.tellp() & 1) != 0) {
-		Dst.put(0);
-	}
 	return true;
 }
 

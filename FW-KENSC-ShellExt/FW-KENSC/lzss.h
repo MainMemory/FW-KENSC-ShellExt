@@ -96,9 +96,9 @@ public:
  * The template parameter is an adaptor class/structure with the following
  * members:
  * struct LZSSAdaptor {
- * 	typedef unsigned char  stream_t;
- * 	typedef unsigned short descriptor_t;
- * 	typedef littleendian<descriptor_t> descriptor_endian_t;
+ * 	using stream_t     = unsigned char;
+ * 	using descriptor_t = unsigned short;
+ * 	using descriptor_endian_t = littleendian<descriptor_t>;
  * 	constexpr static size_t const NumDescBits = sizeof(descriptor_t) * 8;
  * 	// Number of bits used in descriptor bitfield to signal the end-of-file
  * 	// marker sequence.
@@ -137,8 +137,8 @@ public:
 template<typename Adaptor>
 class LZSSGraph {
 public:
-	typedef std::list<AdjListNode> AdjList;
-	typedef std::vector<AdjListNode> MatchVector;
+	using AdjList = std::list<AdjListNode>;
+	using MatchVector = std::vector<AdjListNode>;
 private:
 	// Source file data and its size; one node per character in source file.
 	typename Adaptor::stream_t const *data;
@@ -158,7 +158,7 @@ private:
 		static_assert(noexcept(Adaptor::dictionary_weight(basenode, basenode)),
 		                       "Adaptor::dictionary_weight() is not noexcept");
 		// Upper and lower bounds for sliding window, starting node.
-		size_t ubound = std::min(Adaptor::LookAheadBufSize, nlen - basenode),
+		size_t ubound = std::min(size_t(Adaptor::LookAheadBufSize), nlen - basenode),
 		       lbound = basenode > Adaptor::SearchBufSize ? basenode - Adaptor::SearchBufSize : 0,
 		       ii = basenode - 1;
 		// This is what we produce.
@@ -185,7 +185,7 @@ private:
 				size_t wgt = Adaptor::dictionary_weight(basenode - ii, jj);
 				AdjListNode &best = matches[jj - 1];
 				if (wgt < best.get_weight()) {
-					best = std::move(AdjListNode(basenode + jj, basenode - ii, jj, wgt));
+					best = AdjListNode(basenode + jj, basenode - ii, jj, wgt);
 				}
 				// We can find no more matches with the current starting node.
 				if (jj >= ubound) {
@@ -307,8 +307,8 @@ public:
 template <typename Adaptor>
 class LZSSOStream {
 private:
-	typedef typename Adaptor::descriptor_t descriptor_t;
-	typedef typename Adaptor::descriptor_endian_t BitWriter;
+	using descriptor_t = typename Adaptor::descriptor_t;
+	using BitWriter = typename Adaptor::descriptor_endian_t;
 	// Where we will output to.
 	std::ostream &out;
 	// Internal bitstream output buffer.
@@ -369,8 +369,8 @@ public:
 template <typename Adaptor>
 class LZSSIStream {
 private:
-	typedef typename Adaptor::descriptor_t descriptor_t;
-	typedef typename Adaptor::descriptor_endian_t BitWriter;
+	using descriptor_t = typename Adaptor::descriptor_t;
+	using BitWriter = typename Adaptor::descriptor_endian_t;
 	// Where we will input to.
 	std::istream &in;
 	// Internal bitstream input buffer.

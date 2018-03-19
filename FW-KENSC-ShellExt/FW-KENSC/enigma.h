@@ -26,14 +26,16 @@
 #include "moduled_adaptor.h"
 
 class enigma;
-typedef BasicDecoder<enigma, false> basic_enigma;
-typedef ModuledAdaptor<enigma, 4096u, 1u> moduled_enigma;
+using basic_enigma = BasicDecoder<enigma, false>;
+using moduled_enigma = ModuledAdaptor<enigma, 4096u, 1u>;
 
 class enigma : public basic_enigma, public moduled_enigma {
-public:
-	static bool decode(std::istream &Src, std::ostream &Dst);
-	static bool encode(std::istream &Src, std::ostream &Dst);
+	friend basic_enigma;
+	friend moduled_enigma;
 	static bool encode(std::ostream &Dst, unsigned char const *data, size_t const Size);
+public:
+	static bool encode(std::istream &Src, std::ostream &Dst);
+	static bool decode(std::istream &Src, std::ostream &Dst);
 };
 
 #endif // __LIB_ENIGMA_H

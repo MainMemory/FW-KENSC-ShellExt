@@ -18,15 +18,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <memory>
-#include <istream>
-#include <ostream>
-#include <sstream>
-#include <map>
-#include <set>
-#include <queue>
 #include <algorithm>
+#include <cstdint>
+#include <istream>
+#include <map>
+#include <memory>
+#include <ostream>
+#include <queue>
+#include <set>
+#include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "nemesis.h"
@@ -36,23 +38,23 @@
 using namespace std;
 
 template<>
-size_t moduled_nemesis::PadMaskBits = 1u;
+size_t moduled_nemesis::PadMaskBits = 0;
 
 // This represents a nibble run of up to 7 repetitions of the starting nibble.
 class nibble_run {
 private:
-	unsigned char nibble;   // Nibble we are interested in.
-	unsigned char count;    // How many times the nibble is repeated.
+	unsigned char nibble{0};   // Nibble we are interested in.
+	unsigned char count{0};    // How many times the nibble is repeated.
 public:
 	// Constructors.
-	nibble_run() noexcept : nibble(0), count(0) {
-	}
+	nibble_run() noexcept = default;
 	nibble_run(unsigned char n, unsigned char c) noexcept : nibble(n), count(c) {
 	}
 	nibble_run(nibble_run const &other) noexcept = default;
 	nibble_run(nibble_run &&other) noexcept = default;
 	nibble_run &operator=(nibble_run const &other) noexcept = default;
 	nibble_run &operator=(nibble_run &&other) noexcept = default;
+	~nibble_run() noexcept = default;
 	// Sorting operator.
 	bool operator<(nibble_run const &other) const noexcept {
 		return (nibble < other.nibble) || (nibble == other.nibble && count < other.count);
@@ -83,9 +85,9 @@ public:
 };
 
 struct SizeFreqNibble {
-	size_t count;
+	size_t count{0};
 	nibble_run nibble;
-	unsigned char codelen;
+	unsigned char codelen{0};
 	SizeFreqNibble(size_t cnt, nibble_run const &nib, unsigned char len) noexcept
 		: count(cnt), nibble(nib), codelen(len) {
 	}
@@ -94,6 +96,7 @@ struct SizeFreqNibble {
 	SizeFreqNibble(SizeFreqNibble &&other) noexcept = default;
 	SizeFreqNibble &operator=(SizeFreqNibble const &other) noexcept = default;
 	SizeFreqNibble &operator=(SizeFreqNibble &&other) noexcept = default;
+	~SizeFreqNibble() noexcept = default;
 };
 
 struct Code {
@@ -108,12 +111,13 @@ struct Code {
 	Code(Code &&other) noexcept = default;
 	Code &operator=(Code const &other) noexcept = default;
 	Code &operator=(Code &&other) noexcept = default;
+	~Code() noexcept = default;
 };
 
-typedef map<nibble_run, unsigned char> CodeSizeMap;
-typedef map<nibble_run, size_t> RunCountMap;
-typedef map<nibble_run, Code> NibbleCodeMap;
-typedef map<Code, nibble_run> CodeNibbleMap;
+using CodeSizeMap = map<nibble_run, unsigned char>;
+using RunCountMap = map<nibble_run, size_t>;
+using NibbleCodeMap = map<nibble_run, Code>;
+using CodeNibbleMap = map<Code, nibble_run>;
 
 // Slightly based on code by Mark Nelson for Huffman encoding.
 // http://marknelson.us/1996/01/01/priority-queues/
@@ -125,16 +129,20 @@ private:
 	nibble_run value;
 public:
 	// Construct a new leaf node for character c.
-	node(nibble_run const &val, int wgt = -1) noexcept
+	node(nibble_run const &val, int wgt) noexcept
 		: weight(wgt), value(val) {
 	}
 	// Construct a new internal node that has children c1 and c2.
-	node(shared_ptr<node> c0, shared_ptr<node> c1) noexcept {
+	node(const shared_ptr<node>& c0, const shared_ptr<node>& c1) noexcept {
 		value = nibble_run {0, 0};
 		weight = c0->weight + c1->weight;
 		child0 = c0;
 		child1 = c1;
 	}
+	node(node const &other) noexcept = default;
+	node(node &&other) noexcept = default;
+	node &operator=(node const &other) noexcept = default;
+	node &operator=(node &&other) noexcept = default;
 	~node() noexcept {
 		child0.reset();
 		child1.reset();
@@ -169,10 +177,10 @@ public:
 		return value;
 	}
 	void set_child0(shared_ptr<node> c0) noexcept {
-		child0 = c0;
+		child0 = std::move(c0);
 	}
 	void set_child1(shared_ptr<node> c1) noexcept {
-		child1 = c1;
+		child1 = std::move(c1);
 	}
 	void set_weight(int w) noexcept {
 		weight = w;
@@ -196,7 +204,7 @@ public:
 	}
 };
 
-typedef vector<shared_ptr<node>> NodeVector;
+using NodeVector = vector<shared_ptr<node> >;
 
 struct Compare_size {
 	bool operator()(SizeFreqNibble const &lhs, SizeFreqNibble const &rhs) noexcept {
@@ -407,7 +415,7 @@ public:
 			// the lines.
 			dst.seekg(0);
 			dst.clear();
-			unsigned long in = LittleEndian::Read4(dst);
+			uint32_t in = LittleEndian::Read4(dst);
 			LittleEndian::Write4(Dst, in);
 			while (size_t(dst.tellg()) < rtiles << 5) {
 				in ^= LittleEndian::Read4(dst);
@@ -577,7 +585,7 @@ public:
 						size_t len = 0;
 						for (size_t j = 0; j < n; j++) {
 							size_t c = linear_coeffs[base + j];
-							if (!c) {
+							if (c == 0u) {
 								continue;
 							}
 
@@ -597,7 +605,7 @@ public:
 						size_t code = 0, len = 0;
 						for (size_t i = 0; i < n; i++) {
 							size_t c = linear_coeffs[best_line + i];
-							if (!c) {
+							if (c == 0u) {
 								continue;
 							}
 							// Is this run in the codemap?
@@ -712,7 +720,7 @@ public:
 		// *the* lowest file size.
 		while (qt.size() > 1) {
 			// Make a copy of the basic coin collection.
-			typedef priority_queue<shared_ptr<node>, NodeVector, Compare_node> CoinQueue;
+			using CoinQueue = priority_queue<shared_ptr<node>, NodeVector, Compare_node>;
 			CoinQueue q0(qt.begin(), qt.end());
 
 			// We now solve the Coin collector's problem using the Package-merge
@@ -776,7 +784,7 @@ public:
 			// This set contains lots more information, and is used to associate
 			// the nibble run with its optimal code. It is sorted by code size,
 			// then by frequency of the nibble run, then by the nibble run.
-			typedef multiset<SizeFreqNibble, Compare_size> SizeSet;
+			using SizeSet = multiset<SizeFreqNibble, Compare_size>;
 			SizeSet sizemap;
 			for (auto & elem : basesizemap) {
 				unsigned char size = elem.second;
@@ -963,10 +971,10 @@ bool nemesis::encode(istream &Src, ostream &Dst) {
 	size_t sizes[4];
 
 	// Four different attempts to encode, for improved file size.
-	sizes[0] = nemesis_internal::encode(src, buffers[0], false, sz, Compare_node());
-	sizes[1] = nemesis_internal::encode(src, buffers[1], false, sz, Compare_node2());
-	sizes[2] = nemesis_internal::encode(alt, buffers[2], true , sz, Compare_node());
-	sizes[3] = nemesis_internal::encode(alt, buffers[3], true , sz, Compare_node2());
+	sizes[0] = nemesis_internal::encode(src, buffers[0], 0, sz, Compare_node());
+	sizes[1] = nemesis_internal::encode(src, buffers[1], 0, sz, Compare_node2());
+	sizes[2] = nemesis_internal::encode(alt, buffers[2], 1 , sz, Compare_node());
+	sizes[3] = nemesis_internal::encode(alt, buffers[3], 1 , sz, Compare_node2());
 
 	// Figure out what was the best encoding.
 	size_t bestsz = numeric_limits<size_t>::max(), beststream = 0;
@@ -979,12 +987,6 @@ bool nemesis::encode(istream &Src, ostream &Dst) {
 
 	buffers[beststream].seekg(0);
 	Dst << buffers[beststream].rdbuf();
-
-	// Pad to even size.
-	if ((Dst.tellp() & 1) != 0) {
-		Dst.put(0);
-	}
-
 	return true;
 }
 

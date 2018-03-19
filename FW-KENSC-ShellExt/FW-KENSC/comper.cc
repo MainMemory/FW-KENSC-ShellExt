@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <cstdint>
 #include <istream>
 #include <ostream>
 #include <sstream>
@@ -34,9 +35,9 @@ size_t moduled_comper::PadMaskBits = 1u;
 class comper_internal {
 	// NOTE: This has to be changed for other LZSS-based compression schemes.
 	struct ComperAdaptor {
-		typedef unsigned short stream_t;
-		typedef unsigned short descriptor_t;
-		typedef bigendian<descriptor_t> descriptor_endian_t;
+		using stream_t = uint16_t;
+		using descriptor_t = uint16_t;
+		using descriptor_endian_t = bigendian<descriptor_t>;
 		// Number of bits on descriptor bitfield.
 		constexpr static size_t const NumDescBits = sizeof(descriptor_t) * 8;
 		// Number of bits used in descriptor bitfield to signal the end-of-file
@@ -88,16 +89,16 @@ class comper_internal {
 		}
 	};
 
-	typedef LZSSGraph<ComperAdaptor> CompGraph;
-	typedef LZSSOStream<ComperAdaptor> CompOStream;
-	typedef LZSSIStream<ComperAdaptor> CompIStream;
+	using CompGraph = LZSSGraph<ComperAdaptor>;
+	using CompOStream = LZSSOStream<ComperAdaptor>;
+	using CompIStream = LZSSIStream<ComperAdaptor>;
 
 public:
 	static void decode(istream &in, iostream &Dst) {
 		CompIStream src(in);
 
 		while (in.good()) {
-			if (!src.descbit()) {
+			if (src.descbit() == 0u) {
 				// Symbolwise match.
 				BigEndian::Write2(Dst, BigEndian::Read2(in));
 			} else {
@@ -112,7 +113,7 @@ public:
 				for (size_t i = 0; i <= length; i++) {
 					size_t Pointer = Dst.tellp();
 					Dst.seekg(Pointer - distance);
-					unsigned short Word = BigEndian::Read2(Dst);
+					uint16_t Word = BigEndian::Read2(Dst);
 					Dst.seekp(Pointer);
 					BigEndian::Write2(Dst, Word);
 				}

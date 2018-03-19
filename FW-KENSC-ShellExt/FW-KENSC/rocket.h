@@ -25,14 +25,16 @@
 #include "moduled_adaptor.h"
 
 class rocket;
-typedef BasicDecoder<rocket, false> basic_rocket;
-typedef ModuledAdaptor<rocket, 4096u, 1u> moduled_rocket;
+using basic_rocket = BasicDecoder<rocket, false>;
+using moduled_rocket = ModuledAdaptor<rocket, 4096u, 1u>;
 
 class rocket : public basic_rocket, public moduled_rocket {
+	friend basic_rocket;
+	friend moduled_rocket;
+	static bool encode(std::ostream &Dst, unsigned char const *data, size_t const Size);
 public:
 	using basic_rocket::encode;
 	static bool decode(std::istream &Src, std::iostream &Dst);
-	static bool encode(std::ostream &Dst, unsigned char const *data, size_t const Size);
 };
 
 #endif // __LIB_ROCKET_H
