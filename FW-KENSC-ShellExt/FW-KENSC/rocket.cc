@@ -25,6 +25,7 @@
 #include "rocket.h"
 #include "bigendian_io.h"
 #include "bitstream.h"
+#include "ignore_unused_variable_warning.h"
 #include "lzss.h"
 
 using namespace std;
@@ -70,11 +71,13 @@ class rocket_internal {
 			// Preconditions:
 			// len > 1 && len <= LookAheadBufSize && dist != 0 && dist <= SearchBufSize
 			// Dictionary match: 1-bit descriptor, 10-bit distance, 6-bit length.
+			ignore_unused_variable_warning(dist, len);
 			return 1 + 10 + 6;
 		}
 		// Given an edge, computes how many bits are used in the descriptor field.
 		constexpr static size_t desc_bits(AdjListNode const &edge) noexcept {
 			// Rocket always uses a single bit descriptor.
+			ignore_unused_variable_warning(edge);
 			return 1;
 		}
 		// Rocket finds no additional matches over normal LZSS.
@@ -83,9 +86,11 @@ class rocket_internal {
 			                      size_t basenode,
 			                      size_t ubound, size_t lbound,
 			                      LZSSGraph<RocketAdaptor>::MatchVector &matches) noexcept {
+			ignore_unused_variable_warning(data, basenode, ubound, lbound, matches);
 		}
 		// Rocket needs no additional padding at the end-of-file.
 		constexpr static size_t get_padding(size_t totallen) noexcept {
+			ignore_unused_variable_warning(totallen);
 			return 0;
 		}
 	};

@@ -25,6 +25,7 @@
 #include "comper.h"
 #include "bigendian_io.h"
 #include "bitstream.h"
+#include "ignore_unused_variable_warning.h"
 #include "lzss.h"
 
 using namespace std;
@@ -70,11 +71,13 @@ class comper_internal {
 			// Preconditions:
 			// len > 1 && len <= LookAheadBufSize && dist != 0 && dist <= SearchBufSize
 			// Dictionary match: 1-bit descriptor, 8-bit distance, 8-bit length.
+			ignore_unused_variable_warning(dist, len);
 			return 1 + 8 + 8;
 		}
 		// Given an edge, computes how many bits are used in the descriptor field.
 		constexpr static size_t desc_bits(AdjListNode const &edge) noexcept {
 			// Comper always uses a single bit descriptor.
+			ignore_unused_variable_warning(edge);
 			return 1;
 		}
 		// Comper finds no additional matches over normal LZSS.
@@ -82,9 +85,11 @@ class comper_internal {
 		                                    size_t basenode,
 		                                    size_t ubound, size_t lbound,
 		                                    LZSSGraph<ComperAdaptor>::MatchVector &matches) noexcept {
+			ignore_unused_variable_warning(data, basenode, ubound, lbound, matches);
 		}
 		// Comper needs no additional padding at the end-of-file.
 		constexpr static size_t get_padding(size_t totallen) noexcept {
+			ignore_unused_variable_warning(totallen);
 			return 0;
 		}
 	};

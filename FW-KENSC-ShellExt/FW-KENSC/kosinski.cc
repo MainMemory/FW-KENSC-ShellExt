@@ -25,6 +25,7 @@
 #include "kosinski.h"
 #include "bigendian_io.h"
 #include "bitstream.h"
+#include "ignore_unused_variable_warning.h"
 #include "lzss.h"
 
 using namespace std;
@@ -65,7 +66,7 @@ class kosinski_internal {
 		// "off" vertices ago, for matches with len > 1.
 		// A return of "numeric_limits<size_t>::max()" means "infinite",
 		// or "no edge".
-		static size_t dictionary_weight(size_t dist, size_t len) noexcept {
+		constexpr static size_t dictionary_weight(size_t dist, size_t len) noexcept {
 			// Preconditions:
 			// len > 1 && len <= LookAheadBufSize && dist != 0 && dist <= SearchBufSize
 			if (len == 2 && dist > 256) {
@@ -95,6 +96,7 @@ class kosinski_internal {
 		                                    size_t basenode,
 		                                    size_t ubound, size_t lbound,
 		                                    LZSSGraph<KosinskiAdaptor>::MatchVector &matches) noexcept {
+			ignore_unused_variable_warning(data, basenode, ubound, lbound, matches);
 		}
 		// KosinskiM needs to pad each module to a multiple of 16 bytes.
 		static size_t get_padding(size_t totallen) noexcept {

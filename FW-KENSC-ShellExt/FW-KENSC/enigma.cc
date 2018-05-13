@@ -35,9 +35,6 @@
 
 using namespace std;
 
-template<>
-size_t moduled_enigma::PadMaskBits = 0;
-
 using EniIBitstream = ibitstream<uint16_t, true>;
 using EniOBitstream = obitstream<uint16_t>;
 
@@ -211,6 +208,9 @@ static inline void flush_buffer(vector<unsigned short> &buf,
 	}
 	buf.clear();
 }
+
+template<>
+size_t moduled_enigma::PadMaskBits = 1u;
 
 class enigma_internal {
 public:

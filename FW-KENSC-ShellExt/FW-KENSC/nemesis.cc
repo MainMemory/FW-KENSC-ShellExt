@@ -34,11 +34,9 @@
 #include "nemesis.h"
 #include "bigendian_io.h"
 #include "bitstream.h"
+#include "ignore_unused_variable_warning.h"
 
 using namespace std;
-
-template<>
-size_t moduled_nemesis::PadMaskBits = 0;
 
 // This represents a nibble run of up to 7 repetitions of the starting nibble.
 class nibble_run {
@@ -243,6 +241,7 @@ struct Compare_node {
 	}
 	// Just discard the lowest weighted item.
 	void update(NodeVector &qt, NibbleCodeMap &codes) const noexcept {
+		ignore_unused_variable_warning(codes);
 		pop_heap(qt.begin(), qt.end(), *this);
 		qt.pop_back();
 	}
@@ -306,6 +305,9 @@ struct Compare_node2 {
 };
 
 NibbleCodeMap Compare_node2::codemap;
+
+template<>
+size_t moduled_nemesis::PadMaskBits = 1u;
 
 class nemesis_internal {
 public:
