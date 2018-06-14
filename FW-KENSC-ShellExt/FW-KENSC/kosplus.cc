@@ -18,6 +18,7 @@
  */
 
 #include <cstdint>
+#include <iostream>
 #include <istream>
 #include <ostream>
 #include <sstream>
@@ -39,6 +40,13 @@ class kosplus_internal {
 		using stream_t = unsigned char;
 		using descriptor_t = unsigned char;
 		using descriptor_endian_t = littleendian<descriptor_t>;
+		enum class EdgeType : size_t {
+			invalid,
+			symbolwise,
+			dictionary_inline,
+			dictionary_short,
+			dictionary_long
+		};
 		// Number of bits on descriptor bitfield.
 		constexpr static size_t const NumDescBits = sizeof(descriptor_t) * 8;
 		// Number of bits used in descriptor bitfield to signal the end-of-file
@@ -56,52 +64,73 @@ class kosplus_internal {
 		constexpr static size_t const LookAheadBufSize = 264;
 		// Total size of the sliding window.
 		constexpr static size_t const SlidingWindowSize = SearchBufSize + LookAheadBufSize;
-		// Computes the cost of a symbolwise encoding, that is, the cost of encoding
-		// one single symbol..
-		// Computes the cost of a symbolwise encoding, that is, the cost of encoding
-		// one single symbol..
-		constexpr static size_t symbolwise_weight() noexcept {
-			// Literal: 1-bit descriptor, 8-bit length.
-			return 1 + 8;
-		}
-		// Computes the cost of covering all of the "len" vertices starting from
-		// "off" vertices ago, for matches with len > 1.
-		// A return of "numeric_limits<size_t>::max()" means "infinite",
-		// or "no edge".
-		constexpr static size_t dictionary_weight(size_t dist, size_t len) noexcept {
+		// Computes the type of edge that covers all of the "len" vertices starting from
+		// "off" vertices ago.
+		// Returns EdgeType::invalid if there is no such edge.
+		constexpr static EdgeType match_type(size_t const dist, size_t const len) noexcept {
 			// Preconditions:
-			// len > 1 && len <= szLookAhead && dist != 0 && dist <= szSearchBuffer
-			if (len == 2 && dist > 256) {
+			// len >= 1 && len <= LookAheadBufSize && dist != 0 && dist <= SearchBufSize
+			if (len == 1) {
+				return EdgeType::symbolwise;
+			} else if (len == 2 && dist > 256) {
 				// Can't represent this except by inlining both nodes.
-				return numeric_limits<size_t>::max();	// "infinite"
+				return EdgeType::invalid;
 			} else if (len <= 5 && dist <= 256) {
-				// Inline RLE: 2-bit descriptor, 2-bit count, 8-bit distance.
-				return 2 + 2 + 8;
+				return EdgeType::dictionary_inline;
 			} else if (len >= 3 && len <= 9) {
-				// Separate RLE, short form: 2-bit descriptor, 13-bit distance,
-				// 3-bit length.
-				return 2 + 13 + 3;
+				return EdgeType::dictionary_short;
 			} else { //if (len >= 10 && len <= 264)
-				// Separate RLE, long form: 2-bit descriptor, 13-bit distance,
-				// 3-bit marker (zero), 8-bit length.
-				return 2 + 13 + 8 + 3;
+				return EdgeType::dictionary_long;
 			}
 		}
-		// Given an edge, computes how many bits are used in the descriptor field.
-		static size_t desc_bits(AdjListNode const &edge) noexcept {
-			// Since KosPlus non-descriptor data is always 1, 2 or 3 bytes, this is
-			// a quick way to compute it.
-			return edge.get_weight() & 7;
+		// Given an edge type, computes how many bits are used in the descriptor field.
+		constexpr static size_t desc_bits(EdgeType const type) noexcept {
+			switch (type) {
+				case EdgeType::symbolwise:
+					// 1-bit describtor.
+					return 1;
+				case EdgeType::dictionary_inline:
+					// 2-bit descriptor, 2-bit count.
+					return 2 + 2;
+				case EdgeType::dictionary_short:
+				case EdgeType::dictionary_long:
+					// 2-bit descriptor.
+					return 2;
+				default:
+					return numeric_limits<size_t>::max();
+			}
+		}
+		// Given an edge type, computes how many bits are used in total by this edge.
+		// A return of "numeric_limits<size_t>::max()" means "infinite",
+		// or "no edge".
+		constexpr static size_t edge_weight(EdgeType const type) noexcept {
+			switch (type) {
+				case EdgeType::symbolwise:
+					// 8-bit value.
+					return desc_bits(type) + 8;
+				case EdgeType::dictionary_inline:
+					// 8-bit distance.
+					return desc_bits(type) + 8;
+				case EdgeType::dictionary_short:
+					// 13-bit distance, 3-bit length.
+					return desc_bits(type) + 13 + 3;
+				case EdgeType::dictionary_long:
+					// 13-bit distance, 3-bit marker (zero),
+					// 8-bit length.
+					return desc_bits(type) + 13 + 8 + 3;
+				default:
+					return numeric_limits<size_t>::max();
+			}
 		}
 		// KosPlus finds no additional matches over normal LZSS.
 		constexpr static void extra_matches(stream_t const *data,
-		                                    size_t basenode,
-		                                    size_t ubound, size_t lbound,
+		                                    size_t const basenode,
+		                                    size_t const ubound, size_t const lbound,
 		                                    LZSSGraph<KosPlusAdaptor>::MatchVector &matches) noexcept {
 			ignore_unused_variable_warning(data, basenode, ubound, lbound, matches);
 		}
 		// KosPlusM needs no additional padding at the end-of-file.
-		constexpr static size_t get_padding(size_t totallen) noexcept {
+		constexpr static size_t get_padding(size_t const totallen) noexcept {
 			ignore_unused_variable_warning(totallen);
 			return 0;
 		}
@@ -120,14 +149,14 @@ public:
 			} else {
 				// Dictionary matches.
 				// Count and distance
-				size_t Count = 0;
-				size_t distance = 0;
+				size_t Count = 0u;
+				size_t distance = 0u;
 
 				if (src.descbit() != 0u) {
 					// Separate dictionary match.
-					unsigned char Low = src.getbyte(), High = src.getbyte();
+					size_t High = src.getbyte(), Low = src.getbyte();
 
-					Count = size_t(High & 0x07);
+					Count = High & 0x07u;
 
 					if (Count == 0u) {
 						// 3-byte dictionary match.
@@ -138,24 +167,22 @@ public:
 						Count += 9;
 					} else {
 						// 2-byte dictionary match.
-						Count += 2;
+						Count = 10 - Count;
 					}
 
-					distance = (~size_t(0x1FFF)) | (size_t(0xF8 & High) << 5) | size_t(Low);
+					distance = 0x2000u - (((0xF8u & High) << 5) | Low);
 				} else {
 					// Inline dictionary match.
-					unsigned char Low  = src.descbit(),
-						          High = src.descbit();
+					distance = 0x100u - src.getbyte();
 
-					Count = ((size_t(Low) << 1) | size_t(High)) + 2;
+					size_t High = src.descbit(), Low  = src.descbit();
 
-					distance = src.getbyte();
-					distance |= ~size_t(0xFF);
+					Count = ((High << 1) | Low) + 2;
 				}
 
 				for (size_t i = 0; i < Count; i++) {
 					size_t Pointer = Dst.tellp();
-					Dst.seekg(Pointer + distance);
+					Dst.seekg(Pointer - distance);
 					unsigned char Byte = Read1(Dst);
 					Dst.seekp(Pointer);
 					Write1(Dst, Byte);
@@ -165,6 +192,7 @@ public:
 	}
 
 	static void encode(ostream &Dst, unsigned char const *&Data, size_t const Size) {
+		using EdgeType = typename KosPlusAdaptor::EdgeType;
 		using KosGraph = LZSSGraph<KosPlusAdaptor>;
 		using KosOStream = LZSSOStream<KosPlusAdaptor>;
 
@@ -175,50 +203,44 @@ public:
 
 		size_t pos = 0;
 		// Go through each edge in the optimal path.
-		for (typename KosGraph::AdjList::const_iterator it = list.begin();
-			    it != list.end(); ++it) {
-			AdjListNode const &edge = *it;
-			size_t len = edge.get_length(), dist = edge.get_distance();
-			// The weight of each edge uniquely identifies how it should be written.
-			// NOTE: This needs to be changed for other LZSS schemes.
-			switch (edge.get_weight()) {
-				case 9:
-					// Symbolwise match.
+		for (auto const &edge : list) {
+			switch (edge.get_type()) {
+				case EdgeType::symbolwise:
 					out.descbit(1);
 					out.putbyte(Data[pos]);
 					break;
-				case 12:
-					// Inline dictionary match.
+				case EdgeType::dictionary_inline: {
 					out.descbit(0);
 					out.descbit(0);
-					len -= 2;
+					size_t const len  = edge.get_length() - 2,
+					             dist = 0x100u - edge.get_distance();
+					out.putbyte(dist);
 					out.descbit((len >> 1) & 1);
 					out.descbit(len & 1);
-					out.putbyte(-dist);
 					break;
-				case 18:
-				case 26: {
-					// Separate dictionary match.
+				}
+				case EdgeType::dictionary_short:
+				case EdgeType::dictionary_long: {
 					out.descbit(0);
 					out.descbit(1);
-					dist = (-dist) & 0x1FFF;
-					uint16_t high = (dist >> 5) & 0xF8,
-					         low  = (dist & 0xFF);
-					if (edge.get_weight() == 18) {
-						// 2-byte dictionary match.
+					size_t const len  = edge.get_length(),
+					             dist = 0x2000u - edge.get_distance();
+					uint16_t high = (dist >> 5) & 0xF8u,
+					         low  = (dist & 0xFFu);
+					if (edge.get_type() == EdgeType::dictionary_short) {
+						out.putbyte(high | (10 - len));
 						out.putbyte(low);
-						out.putbyte(high | (len - 2));
 					} else {
-						// 3-byte dictionary match.
-						out.putbyte(low);
 						out.putbyte(high);
+						out.putbyte(low);
 						out.putbyte(len - 9);
 					}
 					break;
 				}
 				default:
 					// This should be unreachable.
-					break;
+					std::cerr << "Compression produced invalid edge type " << static_cast<size_t>(edge.get_type()) << std::endl;
+					__builtin_unreachable();
 			}
 			// Go to next position.
 			pos = edge.get_dest();
@@ -228,15 +250,15 @@ public:
 		out.descbit(0);
 		out.descbit(1);
 
-		// Write end-of-file marker. Maybe use 0x00 0xF8 0x00 instead?
-		out.putbyte(0x00);
+		// Write end-of-file marker.
 		out.putbyte(0xF0);
+		out.putbyte(0x00);
 		out.putbyte(0x00);
 	}
 };
 
 bool kosplus::decode(istream &Src, iostream &Dst) {
-	size_t Location = Src.tellg();
+	size_t const Location = Src.tellg();
 	stringstream in(ios::in | ios::out | ios::binary);
 	extract(Src, in);
 

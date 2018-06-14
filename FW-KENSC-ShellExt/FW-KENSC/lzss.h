@@ -30,12 +30,21 @@
 #include "bigendian_io.h"
 #include "bitstream.h"
 
+#ifdef _MSC_VER
+#ifndef __clang__
+[[noreturn]] inline void __builtin_unreachable() {
+	__assume(false);
+}
+#endif
+#endif
+
 /*
  * Class representing an edge in the LZSS-compression graph. An edge (u, v)
  * indicates that there is a sliding window match that covers all the characters
  * in the [u, v) range (half-open) -- that is, node v is not part of the match.
  * Each node is a character in the file, and is represented by its position.
  */
+template <typename EdgeType>
 class AdjListNode {
 private:
 	// The first character after the match ends.
@@ -46,35 +55,39 @@ private:
 	size_t distance;
 	// How long the match is.
 	size_t length;
+	EdgeType type;
 public:
 	// Constructors.
-	AdjListNode() noexcept
+	constexpr AdjListNode() noexcept
 		: destnode(1), weight(std::numeric_limits<size_t>::max()), distance(1),
-		  length(1) {
+		  length(1), type(EdgeType::symbolwise) {
 	}
-	AdjListNode(size_t dest, size_t dist, size_t len, size_t wgt) noexcept
-		: destnode(dest), weight(wgt), distance(dist), length(len) {
+	constexpr AdjListNode(size_t dest, size_t dist, size_t len, size_t wgt, EdgeType ty) noexcept
+		: destnode(dest), weight(wgt), distance(dist), length(len), type(ty) {
 	}
-	AdjListNode(AdjListNode const &other) noexcept = default;
-	AdjListNode(AdjListNode &&other) noexcept = default;
-	AdjListNode &operator=(AdjListNode const &other) noexcept = default;
-	AdjListNode &operator=(AdjListNode &&other) noexcept = default;
+	constexpr AdjListNode(AdjListNode<EdgeType> const &other) noexcept = default;
+	constexpr AdjListNode(AdjListNode<EdgeType> &&other) noexcept = default;
+	constexpr AdjListNode &operator=(AdjListNode<EdgeType> const &other) noexcept = default;
+	constexpr AdjListNode &operator=(AdjListNode<EdgeType> &&other) noexcept = default;
 	// Getters.
-	size_t get_dest() const noexcept {
+	constexpr size_t get_dest() const noexcept {
 		return destnode;
 	}
-	size_t get_weight() const noexcept {
+	constexpr size_t get_weight() const noexcept {
 		return weight;
 	}
-	size_t get_distance() const noexcept {
+	constexpr size_t get_distance() const noexcept {
 		return distance;
 	}
-	size_t get_length() const noexcept {
+	constexpr size_t get_length() const noexcept {
 		return length;
+	}
+	constexpr EdgeType get_type() const noexcept {
+		return type;
 	}
 	// Comparison operator. Lowest weight first, on tie, break by shortest
 	// length, on further tie break by distance. Used only on the multimap.
-	bool operator<(AdjListNode const &other) const noexcept {
+	constexpr bool operator<(AdjListNode<EdgeType> const &other) const noexcept {
 		if (weight < other.weight) {
 			return true;
 		} else if (weight > other.weight) {
@@ -95,50 +108,55 @@ public:
  * graph (DAG) by construction, and is automatically sorted topologically.
  * The template parameter is an adaptor class/structure with the following
  * members:
- * struct LZSSAdaptor {
- * 	using stream_t     = unsigned char;
- * 	using descriptor_t = unsigned short;
- * 	using descriptor_endian_t = littleendian<descriptor_t>;
- * 	constexpr static size_t const NumDescBits = sizeof(descriptor_t) * 8;
- * 	// Number of bits used in descriptor bitfield to signal the end-of-file
- * 	// marker sequence.
- * 	constexpr static size_t const NumTermBits = 2;
- * 	// Flag that tells the compressor that new descriptor fields are needed
- * 	// as soon as the last bit in the previous one is used up.
- * 	constexpr static bool const NeedEarlyDescriptor = true;
- * 	// Flag that marks the descriptor bits as being in little-endian bit
- * 	// order (that is, lowest bits come out first).
- * 	constexpr static bool const DescriptorLittleEndianBits = true;
- * 	// Size of the search buffer.
- * 	constexpr static size_t const SearchBufSize = 8192;
- * 	// Size of the look-ahead buffer.
- * 	constexpr static size_t const LookAheadBufSize = 256;
- * 	// Total size of the sliding window.
- * 	constexpr static size_t const SlidingWindowSize = SearchBufSize + LookAheadBufSize;
- * 	// Computes the cost of a symbolwise encoding, that is, the cost of encoding
- * 	// one single symbol. May be constexpr.
- * 	static size_t symbolwise_weight() noexcept;
- * 	// Computes the cost of covering all of the "len" vertices starting from
- * 	// "off" vertices ago, for matches with len > 1.
- * 	// A return of "std::numeric_limits<size_t>::max()" means "infinite",
- * 	// or "no edge". May be constexpr.
- * 	static size_t dictionary_weight(size_t dist, size_t len) noexcept;
- * 	// Given an edge, computes how many bits are used in the descriptor field.
- *	// May be constexpr.
- * 	static size_t desc_bits(AdjListNode const &edge) noexcept;
- * 	// Function that finds extra matches in the data that are specific to the
- * 	// given encoder and not general LZSS dictionary matches. May be constexpr.
- * 	static void extra_matches(stream_t const *data, size_t basenode,
- * 	                          size_t ubound, size_t lbound,
- * 	                          LZSSGraph<KosinskiAdaptor>::MatchVector &matches) noexcept;
- * 	// Function that computes padding between modules, if any. May be constexpr.
- * 	static size_t get_padding(size_t totallen) noexcept;
+ *  struct LZSSAdaptor {
+ *  	using stream_t     = unsigned char;
+ *  	using descriptor_t = unsigned short;
+ *  	using descriptor_endian_t = littleendian<descriptor_t>;
+ *  	enum class EdgeType : size_t {
+ *  		invalid,
+ *  		// other cases
+ *  	};
+ *  	constexpr static size_t const NumDescBits = sizeof(descriptor_t) * 8;
+ *  	// Number of bits used in descriptor bitfield to signal the end-of-file
+ *  	// marker sequence.
+ *  	constexpr static size_t const NumTermBits = 2;
+ *  	// Flag that tells the compressor that new descriptor fields are needed
+ *  	// as soon as the last bit in the previous one is used up.
+ *  	constexpr static bool const NeedEarlyDescriptor = true;
+ *  	// Flag that marks the descriptor bits as being in little-endian bit
+ *  	// order (that is, lowest bits come out first).
+ *  	constexpr static bool const DescriptorLittleEndianBits = true;
+ *  	// Size of the search buffer.
+ *  	constexpr static size_t const SearchBufSize = 8192;
+ *  	// Size of the look-ahead buffer.
+ *  	constexpr static size_t const LookAheadBufSize = 256;
+ *  	// Total size of the sliding window.
+ *  	constexpr static size_t const SlidingWindowSize = SearchBufSize + LookAheadBufSize;
+ *  	// Computes the type of edge that covers all of the "len" vertices starting from
+ *  	// "off" vertices ago.
+ *  	// Returns EdgeType::invalid if there is no such edge.
+ *  	constexpr static EdgeType match_type(size_t const dist, size_t const len) noexcept
+ *  	// Given an edge type, computes how many bits are used in the descriptor field.
+ *  	constexpr static size_t desc_bits(EdgeType const type) noexcept;
+ *  	// Given an edge type, computes how many bits are used in total by this edge.
+ *  	// A return of "numeric_limits<size_t>::max()" means "infinite",
+ *  	// or "no edge".
+ *  	constexpr static size_t edge_weight(EdgeType const type) noexcept;
+ *  	// Function that finds extra matches in the data that are specific to the
+ *  	// given encoder and not general LZSS dictionary matches. May be constexpr.
+ *  	static void extra_matches(stream_t const *data, size_t const basenode,
+ *  	                          size_t const ubound, size_t const lbound,
+ *  	                          LZSSGraph<KosinskiAdaptor>::MatchVector &matches) noexcept;
+ *  	// Function that computes padding between modules, if any. May be constexpr.
+ *  	static size_t get_padding(size_t const totallen) noexcept;
  */
 template<typename Adaptor>
 class LZSSGraph {
 public:
-	using AdjList = std::list<AdjListNode>;
-	using MatchVector = std::vector<AdjListNode>;
+	using EdgeType = typename Adaptor::EdgeType;
+	using Node_t = AdjListNode<EdgeType>;
+	using AdjList = std::list<Node_t>;
+	using MatchVector = std::vector<Node_t>;
 private:
 	// Source file data and its size; one node per character in source file.
 	typename Adaptor::stream_t const *data;
@@ -153,19 +171,19 @@ private:
 	 * into a map.
 	 */
 	MatchVector find_matches(size_t basenode) const noexcept {
-		static_assert(noexcept(Adaptor::symbolwise_weight()),
-		                       "Adaptor::symbolwise_weight() is not noexcept");
-		static_assert(noexcept(Adaptor::dictionary_weight(basenode, basenode)),
-		                       "Adaptor::dictionary_weight() is not noexcept");
+		static_assert(noexcept(Adaptor::edge_weight(EdgeType())),
+		                       "Adaptor::edge_weight() is not noexcept");
+		static_assert(noexcept(Adaptor::match_type(basenode, basenode)),
+		                       "Adaptor::match_type() is not noexcept");
 		// Upper and lower bounds for sliding window, starting node.
-		size_t ubound = std::min(size_t(Adaptor::LookAheadBufSize), nlen - basenode),
-		       lbound = basenode > Adaptor::SearchBufSize ? basenode - Adaptor::SearchBufSize : 0,
-		       ii = basenode - 1;
+		size_t const ubound = std::min(size_t(Adaptor::LookAheadBufSize), nlen - basenode),
+		             lbound = basenode > Adaptor::SearchBufSize ? basenode - Adaptor::SearchBufSize : 0;
+		size_t ii = basenode - 1;
 		// This is what we produce.
 		MatchVector matches(ubound);
 		// Start with the literal/symbolwise encoding of the current node.
-		size_t wgt = Adaptor::symbolwise_weight();
-		matches[0] = AdjListNode(basenode + 1, 0, 1, wgt);
+		EdgeType const ty = Adaptor::match_type(0, 1);
+		matches[0] = Node_t(basenode + 1, 0, 1, Adaptor::edge_weight(ty), ty);
 		// Get extra dictionary matches dependent on specific encoder.
 		static_assert(noexcept(Adaptor::extra_matches(data, basenode, ubound, lbound, matches)),
 		                       "Adaptor::extra_matches() is not noexcept");
@@ -182,10 +200,13 @@ private:
 				// We have found a match that links (basenode) with
 				// (basenode + jj) with length (jj) and distance (basenode-ii).
 				// Add it to the list if it is a better match.
-				size_t wgt = Adaptor::dictionary_weight(basenode - ii, jj);
-				AdjListNode &best = matches[jj - 1];
-				if (wgt < best.get_weight()) {
-					best = AdjListNode(basenode + jj, basenode - ii, jj, wgt);
+				EdgeType const ty = Adaptor::match_type(basenode - ii, jj);
+				if (ty != EdgeType::invalid) {
+					size_t const wgt = Adaptor::edge_weight(ty);
+					Node_t &best = matches[jj - 1];
+					if (wgt < best.get_weight()) {
+						best = Node_t(basenode + jj, basenode - ii, jj, wgt, ty);
+					}
 				}
 				// We can find no more matches with the current starting node.
 				if (jj >= ubound) {
@@ -218,7 +239,7 @@ public:
 	 * This function returns the shortest path through the file.
 	 */
 	AdjList find_optimal_parse() const noexcept {
-		static_assert(noexcept(Adaptor::desc_bits(AdjListNode())),
+		static_assert(noexcept(Adaptor::desc_bits(EdgeType())),
 		                       "Adaptor::desc_bits() is not noexcept");
 		static_assert(noexcept(Adaptor::get_padding(0)),
 		                       "Adaptor::get_padding() is not noexcept");
@@ -227,7 +248,7 @@ public:
 		//   lowest cost from the start of the file.
 		std::vector<size_t> parents(nlen + 1);
 		// * This is the edge used to go from the parent of a node to said node.
-		std::vector<AdjListNode> pedges(nlen + 1);
+		std::vector<Node_t> pedges(nlen + 1);
 		// * This is the total cost to reach the edge. They start as high as
 		//   possible for all nodes but the first, which starts at 0.
 		std::vector<size_t> costs(nlen + 1, std::numeric_limits<size_t>::max());
@@ -247,12 +268,13 @@ public:
 			// Get the adjacency list for this node.
 			AdjList const &list = adjs[ii];
 			// Get remaining unused descriptor bits up to this node.
-			size_t basedesc = desccosts[ii];
+			size_t const basedesc = desccosts[ii];
 			for (const auto & elem : list) {
 				// Need destination ID and edge weight.
-				size_t nextnode = elem.get_dest(), wgt = costs[ii] + elem.get_weight();
+				size_t const nextnode = elem.get_dest();
+				size_t wgt = costs[ii] + elem.get_weight();
 				// Compute descriptor bits from using this edge.
-				size_t desccost = basedesc + Adaptor::desc_bits(elem);
+				size_t desccost = basedesc + Adaptor::desc_bits(elem.get_type());
 				if (nextnode == nlen) {
 					// This is the ending node. Add the descriptor bits for the
 					// end-of-file marker.
@@ -263,7 +285,7 @@ public:
 					// full Adaptor::NumDescBits bits). Otherwise, we need to
 					// pads the last descriptor bitfield to full size. This line
 					// accomplishes both.
-					size_t descmod = desccost % Adaptor::NumDescBits;
+					size_t const descmod = desccost % Adaptor::NumDescBits;
 					if (descmod != 0 || Adaptor::NeedEarlyDescriptor) {
 						wgt += (Adaptor::NumDescBits - descmod);
 						desccost += (Adaptor::NumDescBits - descmod);
@@ -315,6 +337,11 @@ private:
 	obitstream<descriptor_t, Adaptor::DescriptorLittleEndianBits, BitWriter> bits;
 	// Internal parameter buffer.
 	std::string buffer;
+	void flushbuffer() noexcept {
+		out.write(buffer.c_str(), buffer.size());
+		buffer.clear();
+	}
+
 public:
 	// Constructor.
 	LZSSOStream(std::ostream &Dst) noexcept : out(Dst), bits(out) {
@@ -326,7 +353,7 @@ public:
 		// immediately fetch a new descriptor field when the previous one has
 		// expired, and we don't want it to be the terminating sequence.
 		// First, save current state.
-		bool needdummydesc = !bits.have_waiting_bits();
+		bool const needdummydesc = !bits.have_waiting_bits();
 		// Now, flush the queue if needed.
 		bits.flush();
 		if (Adaptor::NeedEarlyDescriptor && needdummydesc) {
@@ -336,26 +363,24 @@ public:
 			}
 		}
 		// Now write the terminating sequence if it wasn't written already.
-		out.write(buffer.c_str(), buffer.size());
+		flushbuffer();
 	}
 	// Writes a bit to the descriptor bitfield. When the descriptor field is
 	// full, outputs it and the output parameter buffer.
-	void descbit(descriptor_t bit) noexcept {
+	void descbit(descriptor_t const bit) noexcept {
 		if (Adaptor::NeedEarlyDescriptor) {
 			if (bits.push(bit)) {
-				out.write(buffer.c_str(), buffer.size());
-				buffer.clear();
+				flushbuffer();
 			}
 		} else {
 			if (!bits.have_waiting_bits()) {
-				out.write(buffer.c_str(), buffer.size());
-				buffer.clear();
+				flushbuffer();
 			}
 			bits.push(bit);
 		}
 	}
 	// Puts a byte in the output buffer.
-	void putbyte(size_t c) noexcept {
+	void putbyte(size_t const c) noexcept {
 		Write1(buffer, c);
 	}
 };

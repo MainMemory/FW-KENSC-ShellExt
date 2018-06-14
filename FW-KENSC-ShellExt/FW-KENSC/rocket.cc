@@ -18,6 +18,7 @@
  */
 
 #include <cstdint>
+#include <iostream>
 #include <istream>
 #include <ostream>
 #include <sstream>
@@ -39,6 +40,11 @@ class rocket_internal {
 		using stream_t = unsigned char;
 		using descriptor_t = unsigned char;
 		using descriptor_endian_t = littleendian<descriptor_t>;
+		enum class EdgeType : size_t {
+			invalid,
+			symbolwise,
+			dictionary
+		};
 		// Number of bits on descriptor bitfield.
 		constexpr static size_t const NumDescBits = sizeof(descriptor_t) * 8;
 		// Number of bits used in descriptor bitfield to signal the end-of-file
@@ -59,48 +65,60 @@ class rocket_internal {
 		constexpr static size_t const SlidingWindowSize = SearchBufSize + LookAheadBufSize;
 		// Computes the cost of a symbolwise encoding, that is, the cost of encoding
 		// one single symbol..
-		constexpr static size_t symbolwise_weight() noexcept {
-			// Symbolwise match: 1-bit descriptor, 8-bit length.
-			return 1 + 8;
+		// Computes the type of edge that covers all of the "len" vertices starting from
+		// "off" vertices ago.
+		// Returns EdgeType::invalid if there is no such edge.
+		constexpr static EdgeType match_type(size_t const dist, size_t const len) noexcept {
+			// Preconditions:
+			// len >= 1 && len <= LookAheadBufSize && dist != 0 && dist <= SearchBufSize
+			// Dictionary match: 1-bit descriptor, 8-bit distance, 8-bit length.
+			ignore_unused_variable_warning(dist);
+			if (len == 1) {
+				return EdgeType::symbolwise;
+			} else {
+				return EdgeType::dictionary;
+			}
 		}
-		// Computes the cost of covering all of the "len" vertices starting from
-		// "off" vertices ago, for matches with len > 1.
+		// Given an edge type, computes how many bits are used in the descriptor field.
+		constexpr static size_t desc_bits(EdgeType const type) noexcept {
+			// Rocket always uses a single bit descriptor.
+			ignore_unused_variable_warning(type);
+			return 1;
+		}
+		// Given an edge type, computes how many bits are used in total by this edge.
 		// A return of "numeric_limits<size_t>::max()" means "infinite",
 		// or "no edge".
-		constexpr static size_t dictionary_weight(size_t dist, size_t len) noexcept {
-			// Preconditions:
-			// len > 1 && len <= LookAheadBufSize && dist != 0 && dist <= SearchBufSize
-			// Dictionary match: 1-bit descriptor, 10-bit distance, 6-bit length.
-			ignore_unused_variable_warning(dist, len);
-			return 1 + 10 + 6;
-		}
-		// Given an edge, computes how many bits are used in the descriptor field.
-		constexpr static size_t desc_bits(AdjListNode const &edge) noexcept {
-			// Rocket always uses a single bit descriptor.
-			ignore_unused_variable_warning(edge);
-			return 1;
+		constexpr static size_t edge_weight(EdgeType const type) noexcept {
+			switch (type) {
+				case EdgeType::symbolwise:
+					// 8-bit value.
+					return desc_bits(type) + 8;
+				case EdgeType::dictionary:
+					// 10-bit distance, 6-bit length.
+					return desc_bits(type) + 10 + 6;
+				default:
+					return numeric_limits<size_t>::max();
+			}
 		}
 		// Rocket finds no additional matches over normal LZSS.
 		// TODO: Lies. Plane maps rely on the buffer initially containing 0x20's
 		constexpr static void extra_matches(stream_t const *data,
-			                      size_t basenode,
-			                      size_t ubound, size_t lbound,
+			                      size_t const basenode,
+			                      size_t const ubound, size_t const lbound,
 			                      LZSSGraph<RocketAdaptor>::MatchVector &matches) noexcept {
 			ignore_unused_variable_warning(data, basenode, ubound, lbound, matches);
 		}
 		// Rocket needs no additional padding at the end-of-file.
-		constexpr static size_t get_padding(size_t totallen) noexcept {
+		constexpr static size_t get_padding(size_t const totallen) noexcept {
 			ignore_unused_variable_warning(totallen);
 			return 0;
 		}
 	};
 
-	using RockGraph = LZSSGraph<RocketAdaptor>;
-	using RockOStream = LZSSOStream<RocketAdaptor>;
-	using RockIStream = LZSSIStream<RocketAdaptor>;
-
 public:
-	static void decode(istream &in, iostream &Dst, uint16_t Size) {
+	static void decode(istream &in, iostream &Dst, uint16_t const Size) {
+		using RockIStream = LZSSIStream<RocketAdaptor>;
+
 		RockIStream src(in);
 
 		// Initialise buffer (needed by Rocket Knight Adventures plane maps)
@@ -114,21 +132,21 @@ public:
 		while (in.good() && in.tellg() < Size) {
 			if (src.descbit() != 0u) {
 				// Symbolwise match.
-				unsigned char Byte = Read1(in);
+				unsigned char const Byte = Read1(in);
 				Write1(Dst, Byte);
 				buffer[buffer_index++] = Byte;
 				buffer_index &= 0x3FF;
 			} else {
 				// Dictionary match.
 				// Distance and length of match.
-				size_t high = src.getbyte(),
-					   low = src.getbyte();
+				size_t const high = src.getbyte(),
+					         low = src.getbyte();
 
-				size_t length = (high&0xFC)>>2,
-					   index = ((high&3)<<8)|low;
+				size_t const length = (high&0xFC)>>2;
+				size_t index = ((high&3)<<8)|low;
 
 				for (size_t i = 0; i <= length; i++) {
-					unsigned char Byte = buffer[index++];
+					unsigned char const Byte = buffer[index++];
 					index &= 0x3FF;
 					Write1(Dst, Byte);
 					buffer[buffer_index++] = Byte;
@@ -139,6 +157,10 @@ public:
 	}
 
 	static void encode(ostream &Dst, unsigned char const *&Data, size_t const Size) {
+		using EdgeType = typename RocketAdaptor::EdgeType;
+		using RockGraph = LZSSGraph<RocketAdaptor>;
+		using RockOStream = LZSSOStream<RocketAdaptor>;
+
 		// Compute optimal Rocket parsing of input file.
 		RockGraph enc(Data, Size);
 		RockGraph::AdjList list = enc.find_optimal_parse();
@@ -146,23 +168,26 @@ public:
 
 		size_t pos = 0;
 		// Go through each edge in the optimal path.
-		for (RockGraph::AdjList::const_iterator it = list.begin();
-			    it != list.end(); ++it) {
-			AdjListNode const &edge = *it;
-			size_t len = edge.get_length(), dist = edge.get_distance();
-			// The weight of each edge uniquely identifies how it should be written.
-			// NOTE: This needs to be changed for other LZSS schemes.
-			if (len == 1) {
-				// Symbolwise match.
-				out.descbit(1);
-				out.putbyte(Data[pos]);
-			} else {
-				// Dictionary match.
-				out.descbit(0);
-				uint16_t index = (0x3C0 + pos - dist) & 0x3FF;
-				out.putbyte(((len-1)<<2)|(index>>8));
-				out.putbyte(index);
-			}
+		for (auto const &edge : list) {
+			switch (edge.get_type()) {
+				case EdgeType::symbolwise:
+					out.descbit(1);
+					out.putbyte(Data[pos]);
+					break;
+				case EdgeType::dictionary: {
+					size_t const len  = edge.get_length(),
+					             dist = edge.get_distance();
+					out.descbit(0);
+					uint16_t const index = (0x3C0 + pos - dist) & 0x3FF;
+					out.putbyte(((len-1)<<2)|(index>>8));
+					out.putbyte(index);
+					break;
+				}
+				default:
+					// This should be unreachable.
+					std::cerr << "Compression produced invalid edge type " << static_cast<size_t>(edge.get_type()) << std::endl;
+					__builtin_unreachable();
+			};
 			// Go to next position.
 			pos = edge.get_dest();
 		}
@@ -171,9 +196,9 @@ public:
 
 bool rocket::decode(istream &Src, iostream &Dst) {
 	Src.ignore(2);
-	size_t Size = BigEndian::Read2(Src);
+	size_t const Size = BigEndian::Read2(Src);
 
-	size_t Location = Src.tellg();
+	size_t const Location = Src.tellg();
 	stringstream in(ios::in | ios::out | ios::binary);
 	extract(Src, in);
 

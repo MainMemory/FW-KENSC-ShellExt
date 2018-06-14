@@ -18,6 +18,7 @@
  */
 
 #include <cstdint>
+#include <iostream>
 #include <istream>
 #include <ostream>
 #include <sstream>
@@ -39,6 +40,11 @@ class comper_internal {
 		using stream_t = uint16_t;
 		using descriptor_t = uint16_t;
 		using descriptor_endian_t = bigendian<descriptor_t>;
+		enum class EdgeType : size_t {
+			invalid,
+			symbolwise,
+			dictionary
+		};
 		// Number of bits on descriptor bitfield.
 		constexpr static size_t const NumDescBits = sizeof(descriptor_t) * 8;
 		// Number of bits used in descriptor bitfield to signal the end-of-file
@@ -57,49 +63,59 @@ class comper_internal {
 		constexpr static size_t const LookAheadBufSize = 256;
 		// Total size of the sliding window.
 		constexpr static size_t const SlidingWindowSize = SearchBufSize + LookAheadBufSize;
-		// Computes the cost of a symbolwise encoding, that is, the cost of encoding
-		// one single symbol..
-		constexpr static size_t symbolwise_weight() noexcept {
-			// Symbolwise match: 1-bit descriptor, 16-bit length.
-			return 1 + 16;
+		// Computes the type of edge that covers all of the "len" vertices starting from
+		// "off" vertices ago.
+		// Returns EdgeType::invalid if there is no such edge.
+		constexpr static EdgeType match_type(size_t const dist, size_t const len) noexcept {
+			// Preconditions:
+			// len >= 1 && len <= LookAheadBufSize && dist != 0 && dist <= SearchBufSize
+			// Dictionary match: 1-bit descriptor, 8-bit distance, 8-bit length.
+			ignore_unused_variable_warning(dist);
+			if (len == 1) {
+				return EdgeType::symbolwise;
+			} else {
+				return EdgeType::dictionary;
+			}
 		}
-		// Computes the cost of covering all of the "len" vertices starting from
-		// "off" vertices ago, for matches with len > 1.
+		// Given an edge type, computes how many bits are used in the descriptor field.
+		constexpr static size_t desc_bits(EdgeType const type) noexcept {
+			// Comper always uses a single bit descriptor.
+			ignore_unused_variable_warning(type);
+			return 1;
+		}
+		// Given an edge type, computes how many bits are used in total by this edge.
 		// A return of "numeric_limits<size_t>::max()" means "infinite",
 		// or "no edge".
-		constexpr static size_t dictionary_weight(size_t dist, size_t len) noexcept {
-			// Preconditions:
-			// len > 1 && len <= LookAheadBufSize && dist != 0 && dist <= SearchBufSize
-			// Dictionary match: 1-bit descriptor, 8-bit distance, 8-bit length.
-			ignore_unused_variable_warning(dist, len);
-			return 1 + 8 + 8;
-		}
-		// Given an edge, computes how many bits are used in the descriptor field.
-		constexpr static size_t desc_bits(AdjListNode const &edge) noexcept {
-			// Comper always uses a single bit descriptor.
-			ignore_unused_variable_warning(edge);
-			return 1;
+		constexpr static size_t edge_weight(EdgeType const type) noexcept {
+			switch (type) {
+				case EdgeType::symbolwise:
+					// 16-bit value.
+					return desc_bits(type) + 16;
+				case EdgeType::dictionary:
+					// 8-bit distance, 8-bit length.
+					return desc_bits(type) + 8 + 8;
+				default:
+					return numeric_limits<size_t>::max();
+			}
 		}
 		// Comper finds no additional matches over normal LZSS.
 		constexpr static void extra_matches(stream_t const *data,
-		                                    size_t basenode,
-		                                    size_t ubound, size_t lbound,
+		                                    size_t const basenode,
+		                                    size_t const ubound, size_t const lbound,
 		                                    LZSSGraph<ComperAdaptor>::MatchVector &matches) noexcept {
 			ignore_unused_variable_warning(data, basenode, ubound, lbound, matches);
 		}
 		// Comper needs no additional padding at the end-of-file.
-		constexpr static size_t get_padding(size_t totallen) noexcept {
+		constexpr static size_t get_padding(size_t const totallen) noexcept {
 			ignore_unused_variable_warning(totallen);
 			return 0;
 		}
 	};
 
-	using CompGraph = LZSSGraph<ComperAdaptor>;
-	using CompOStream = LZSSOStream<ComperAdaptor>;
-	using CompIStream = LZSSIStream<ComperAdaptor>;
-
 public:
 	static void decode(istream &in, iostream &Dst) {
+		using CompIStream = LZSSIStream<ComperAdaptor>;
+
 		CompIStream src(in);
 
 		while (in.good()) {
@@ -109,16 +125,16 @@ public:
 			} else {
 				// Dictionary match.
 				// Distance and length of match.
-				size_t distance = (0x100 - src.getbyte()) * 2,
+				size_t const distance = (0x100 - src.getbyte()) * 2,
 					   length = src.getbyte();
 				if (length == 0) {
 					break;
 				}
 
 				for (size_t i = 0; i <= length; i++) {
-					size_t Pointer = Dst.tellp();
+					size_t const Pointer = Dst.tellp();
 					Dst.seekg(Pointer - distance);
-					uint16_t Word = BigEndian::Read2(Dst);
+					uint16_t const Word = BigEndian::Read2(Dst);
 					Dst.seekp(Pointer);
 					BigEndian::Write2(Dst, Word);
 				}
@@ -127,6 +143,10 @@ public:
 	}
 
 	static void encode(ostream &Dst, unsigned char const *Data, size_t const Size) {
+		using EdgeType = typename ComperAdaptor::EdgeType;
+		using CompGraph = LZSSGraph<ComperAdaptor>;
+		using CompOStream = LZSSOStream<ComperAdaptor>;
+
 		// Compute optimal Comper parsing of input file.
 		CompGraph enc(Data, Size);
 		CompGraph::AdjList list = enc.find_optimal_parse();
@@ -134,23 +154,26 @@ public:
 
 		size_t pos = 0;
 		// Go through each edge in the optimal path.
-		for (CompGraph::AdjList::const_iterator it = list.begin();
-			    it != list.end(); ++it) {
-			AdjListNode const &edge = *it;
-			size_t len = edge.get_length(), dist = edge.get_distance();
-			// The weight of each edge uniquely identifies how it should be written.
-			// NOTE: This needs to be changed for other LZSS schemes.
-			if (len == 1) {
-				// Symbolwise match.
-				out.descbit(0);
-				out.putbyte(Data[pos]);
-				out.putbyte(Data[pos + 1]);
-			} else {
-				// Dictionary match.
-				out.descbit(1);
-				out.putbyte(-dist);
-				out.putbyte(len - 1);
-			}
+		for (auto const &edge : list) {
+			switch (edge.get_type()) {
+				case EdgeType::symbolwise:
+					out.descbit(0);
+					out.putbyte(Data[pos]);
+					out.putbyte(Data[pos + 1]);
+					break;
+				case EdgeType::dictionary: {
+					size_t const len  = edge.get_length(),
+					             dist = edge.get_distance();
+					out.descbit(1);
+					out.putbyte(-dist);
+					out.putbyte(len - 1);
+					break;
+				}
+				default:
+					// This should be unreachable.
+					std::cerr << "Compression produced invalid edge type " << static_cast<size_t>(edge.get_type()) << std::endl;
+					__builtin_unreachable();
+			};
 			// Go to next position.
 			pos = edge.get_dest() * 2;
 		}
@@ -164,7 +187,7 @@ public:
 };
 
 bool comper::decode(istream &Src, iostream &Dst) {
-	size_t Location = Src.tellg();
+	size_t const Location = Src.tellg();
 	stringstream in(ios::in | ios::out | ios::binary);
 	extract(Src, in);
 
