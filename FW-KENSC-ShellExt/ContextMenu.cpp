@@ -220,7 +220,7 @@ void do_compression_decompression(const int mode, const wchar_t *in)
 			rocket::moduled_encode(instr, outstr);
 			break;
 		}
-		// Kosinski Plus
+		// Kosinski+
 		case 20:
 		{
 			kosplus::decode(instr, outstr);
@@ -249,13 +249,8 @@ void do_compression_decompression(const int mode, const wchar_t *in)
 		fseek(infile, 0, SEEK_END);
 		int filesize = ftell(infile);
 		rewind(infile);
-
 		char *buffer = (char*)malloc(filesize);
-
-		for (int i = 0; i < filesize; ++i)
-		{
-			buffer[i] = fgetc(infile);
-		}
+		fread(buffer, 1, filesize, infile);
 		fclose(infile);
 
 		switch (mode)
@@ -280,10 +275,8 @@ void do_compression_decompression(const int mode, const wchar_t *in)
 
 		FILE *outfile = _wfopen(out, L"wb");
 		delete[] out;
-		for (int i = 0; i < filesize; ++i)
-		{
-			fputc(buffer[i], outfile);
-		}
+		fwrite(buffer, 1, filesize, outfile);
+		free(buffer);
 		fclose(outfile);
 	}
 }
