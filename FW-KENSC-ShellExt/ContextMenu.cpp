@@ -40,37 +40,41 @@ struct iteminfo { int id; wchar_t *text; iteminfo *subitems; };
 
 int curid = 0;
 
-#define defaultmenu(name) iteminfo name##menu[] = { \
-{ curid++, L"&Decompress" }, \
-{ curid++, L"&Compress" }, \
+// For some fucking reason options can't share a name or Windows
+// will call InvokeCommand with the ID of the *first* one
+// ...but only when you select a lot of files.
+// I have absolutely no clue why this happens.
+#define defaultmenu(name, format) iteminfo name##menu[] = { \
+{ curid++, format L" - &Decompress" }, \
+{ curid++, format L" - &Compress" }, \
 { -1 } \
 }
 
-#define moduledmenu(name) iteminfo name##menu[] = { \
-{ curid++, L"&Decompress" }, \
-{ curid++, L"&Compress" }, \
-{ curid++, L"Decompress (&Moduled)" }, \
-{ curid++, L"Compress (M&oduled)" }, \
+#define moduledmenu(name, format) iteminfo name##menu[] = { \
+{ curid++, format L" - &Decompress" }, \
+{ curid++, format L" - &Compress" }, \
+{ curid++, L"&Moduled " format L" - Decompress" }, \
+{ curid++, L"M&oduled " format L" - Compress" }, \
 { -1 } \
 }
 
-moduledmenu(kos);
-defaultmenu(eni);
-defaultmenu(nem);
+moduledmenu(kos, L"Kosinski");
+defaultmenu(eni, L"Enigma");
+defaultmenu(nem, L"Nemesis");
 iteminfo saxmenu[] = {
-	{ curid++, L"&Decompress" },
-	{ curid++, L"&Compress" },
-	{ curid++, L"Decompress (No Size)" },
-	{ curid++, L"Compress (No Size)" },
+	{ curid++, L"Saxman - &Decompress" },
+	{ curid++, L"Saxman - &Compress"},
+	{ curid++, L"Saxman - Decompress (&No Size)" },
+	{ curid++, L"Saxman - Compress (N&o Size)" },
 	{ -1 }
 };
-moduledmenu(comp);
-moduledmenu(rock);
-moduledmenu(kosp);
+moduledmenu(comp, L"Comper");
+moduledmenu(rock, L"Rocket");
+moduledmenu(kosp, L"Kosinski+");
 
 const int END_OF_FW_KENSC = curid;
 
-moduledmenu(twiz);
+moduledmenu(twiz, L"Twizzler");
 
 int maxid = curid;
 
@@ -82,7 +86,7 @@ iteminfo rootmenu[] = {
 	{ curid++, L"&Comper", compmenu },
 	{ curid++, L"&Rocket", rockmenu },
 	{ curid++, L"Kosinski+", kospmenu },
-	{ curid++, L"Twizzler", twizmenu },
+	{ curid++, L"&Twizzler", twizmenu },
 	{ -1 }
 };
 
