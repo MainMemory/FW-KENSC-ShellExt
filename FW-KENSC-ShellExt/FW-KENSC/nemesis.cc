@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <istream>
+#include <limits>
 #include <map>
 #include <memory>
 #include <ostream>
