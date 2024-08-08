@@ -28,5 +28,5 @@ private:
 	// Reference count of component.
 	long m_cRef;
 
-	std::vector<std::wstring> selectedFiles;
+	std::vector<std::basic_string<TCHAR>> selectedFiles;
 };

@@ -3,6 +3,7 @@
 #include <fstream>
 #include <Shlwapi.h>
 #include <Shellapi.h>
+#include <tchar.h>
 #include "ContextMenu.h"
 #include "FW-KENSC/kosinski.h"
 #include "FW-KENSC/enigma.h"
@@ -19,24 +20,24 @@ using std::fstream;
 extern HINSTANCE g_hInst;
 extern long g_cDllRef;
 
-const wchar_t* fileextentions[] = {
-	L".kos",
-	L".kosm",
-	L".eni",
-	L".nem",
-	L".sax",
-	L".sax",
-	L".comp",
-	L".compm",
-	L".rock",
-	L".rockm",
-	L".kosp",
-	L".kospm",
-	L".twiz",
-	L".twim"
+LPCTSTR fileextentions[] = {
+	TEXT(".kos"),
+	TEXT(".kosm"),
+	TEXT(".eni"),
+	TEXT(".nem"),
+	TEXT(".sax"),
+	TEXT(".sax"),
+	TEXT(".comp"),
+	TEXT(".compm"),
+	TEXT(".rock"),
+	TEXT(".rockm"),
+	TEXT(".kosp"),
+	TEXT(".kospm"),
+	TEXT(".twiz"),
+	TEXT(".twim")
 };
 
-struct iteminfo { int id; const wchar_t *text; iteminfo *subitems; };
+struct iteminfo { int id; LPCTSTR text; iteminfo *subitems; };
 
 int curid = 0;
 
@@ -45,62 +46,62 @@ int curid = 0;
 // ...but only when you select a lot of files.
 // I have absolutely no clue why this happens.
 #define defaultmenu(name, format) iteminfo name##menu[] = { \
-{ curid++, format L" - &Decompress" }, \
-{ curid++, format L" - &Compress" }, \
+{ curid++, format TEXT(" - &Decompress") }, \
+{ curid++, format TEXT(" - &Compress") }, \
 { -1 } \
 }
 
 #define moduledmenu(name, format) iteminfo name##menu[] = { \
-{ curid++, format L" - &Decompress" }, \
-{ curid++, format L" - &Compress" }, \
-{ curid++, L"&Moduled " format L" - Decompress" }, \
-{ curid++, L"M&oduled " format L" - Compress" }, \
+{ curid++, format TEXT(" - &Decompress") }, \
+{ curid++, format TEXT(" - &Compress") }, \
+{ curid++, TEXT("&Moduled ") format TEXT(" - Decompress") }, \
+{ curid++, TEXT("M&oduled ") format TEXT(" - Compress") }, \
 { -1 } \
 }
 
-moduledmenu(kos, L"Kosinski");
-defaultmenu(eni, L"Enigma");
-defaultmenu(nem, L"Nemesis");
+moduledmenu(kos, TEXT("Kosinski"));
+defaultmenu(eni, TEXT("Enigma"));
+defaultmenu(nem, TEXT("Nemesis"));
 iteminfo saxmenu[] = {
-	{ curid++, L"Saxman - &Decompress" },
-	{ curid++, L"Saxman - &Compress"},
-	{ curid++, L"Saxman - Decompress (&No Size)" },
-	{ curid++, L"Saxman - Compress (N&o Size)" },
+	{ curid++, TEXT("Saxman - &Decompress") },
+	{ curid++, TEXT("Saxman - &Compress") },
+	{ curid++, TEXT("Saxman - Decompress (&No Size)") },
+	{ curid++, TEXT("Saxman - Compress (N&o Size)") },
 	{ -1 }
 };
-moduledmenu(comp, L"Comper");
-moduledmenu(rock, L"Rocket");
-moduledmenu(kosp, L"Kosinski+");
+moduledmenu(comp, TEXT("Comper"));
+moduledmenu(rock, TEXT("Rocket"));
+moduledmenu(kosp, TEXT("Kosinski+"));
 
 const int END_OF_FW_KENSC = curid;
 
-moduledmenu(twiz, L"Twizzler");
+moduledmenu(twiz, TEXT("Twizzler"));
 
 int maxid = curid;
 
 iteminfo rootmenu[] = {
-	{ curid++, L"&Kosinski", kosmenu },
-	{ curid++, L"&Enigma", enimenu },
-	{ curid++, L"&Nemesis", nemmenu },
-	{ curid++, L"&Saxman", saxmenu },
-	{ curid++, L"&Comper", compmenu },
-	{ curid++, L"&Rocket", rockmenu },
-	{ curid++, L"Kosinski+", kospmenu },
-	{ curid++, L"&Twizzler", twizmenu },
+	{ curid++, TEXT("&Kosinski"), kosmenu },
+	{ curid++, TEXT("&Enigma"), enimenu },
+	{ curid++, TEXT("&Nemesis"), nemmenu },
+	{ curid++, TEXT("&Saxman"), saxmenu },
+	{ curid++, TEXT("&Comper"), compmenu },
+	{ curid++, TEXT("&Rocket"), rockmenu },
+	{ curid++, TEXT("Kosinski+"), kospmenu },
+	{ curid++, TEXT("&Twizzler"), twizmenu },
 	{ -1 }
 };
 
-wchar_t *chgext(const wchar_t *name, const wchar_t *ext)
+LPTSTR chgext(LPCTSTR name, LPCTSTR ext)
 {
-	wchar_t *result = new wchar_t[MAX_PATH];
-	wcscpy(result, name);
+	LPTSTR result = new TCHAR[MAX_PATH];
+	_tcscpy(result, name);
 	PathRenameExtension(result, ext);
 	return result;
 }
 
-void do_compression_decompression(const int mode, const wchar_t *in)
+void do_compression_decompression(const int mode, LPCTSTR in)
 {
-	const wchar_t* const out = chgext(in, (mode & 1) ? fileextentions[mode / 2] : L".unc");
+	const LPCTSTR out = chgext(in, (mode & 1) ? fileextentions[mode / 2] : TEXT(".unc"));
 
 	// FW-KENSC and Twizzler have different ways of being called
 	if (mode < END_OF_FW_KENSC)
@@ -245,7 +246,7 @@ void do_compression_decompression(const int mode, const wchar_t *in)
 	}
 	else
 	{
-		FILE *infile = _wfopen(in, L"rb");
+		FILE *infile = _tfopen(in, TEXT("rb"));
 		fseek(infile, 0, SEEK_END);
 		int filesize = ftell(infile);
 		rewind(infile);
@@ -273,7 +274,7 @@ void do_compression_decompression(const int mode, const wchar_t *in)
 		}
 		}
 
-		FILE *outfile = _wfopen(out, L"wb");
+		FILE *outfile = _tfopen(out, TEXT("wb"));
 		delete[] out;
 		fwrite(buffer, 1, filesize, outfile);
 		free(buffer);
@@ -344,7 +345,7 @@ IFACEMETHODIMP CContextMenu::Initialize(LPCITEMIDLIST pidlFolder, LPDATAOBJECT p
 			// code sample displays the custom context menu item when only 
 			// one file is selected. 
 			UINT nFiles = DragQueryFile(hDrop, 0xFFFFFFFF, NULL, 0);
-			wchar_t buf[MAX_PATH];
+			TCHAR buf[MAX_PATH];
 			for (unsigned int i = 0; i < nFiles; i++)
 				// Get the path of the file.
 				if (DragQueryFile(hDrop, i, buf, MAX_PATH) != 0)
@@ -376,7 +377,7 @@ HMENU ProcessSubMenu(iteminfo *info, UINT idCmdFirst)
 		MENUITEMINFO mii = { sizeof(MENUITEMINFO) };
 		mii.fMask = MIIM_STRING | MIIM_ID;
 		mii.wID = info[i].id + idCmdFirst;
-		mii.dwTypeData = const_cast<LPWSTR>(info[i].text);
+		mii.dwTypeData = const_cast<LPTSTR>(info[i].text);
 		if (info[i].subitems != nullptr)
 		{
 			mii.fMask |= MIIM_SUBMENU;
@@ -396,7 +397,7 @@ IFACEMETHODIMP CContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu, UINT 
 	MENUITEMINFO mii = { sizeof(mii) };
 	mii.fMask = MIIM_STRING | MIIM_ID | MIIM_SUBMENU;
 	mii.wID = idCmdFirst + curid;
-	mii.dwTypeData = const_cast<LPWSTR>(L"FW-KENSC");
+	mii.dwTypeData = const_cast<LPTSTR>(TEXT("FW-KENSC"));
 	mii.hSubMenu = ProcessSubMenu(rootmenu, idCmdFirst);
 	if (!InsertMenuItem(hMenu, indexMenu, TRUE, &mii))
 	{
