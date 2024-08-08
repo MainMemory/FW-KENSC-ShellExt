@@ -36,7 +36,7 @@ const wchar_t* fileextentions[] = {
 	L".twim"
 };
 
-struct iteminfo { int id; wchar_t *text; iteminfo *subitems; };
+struct iteminfo { int id; const wchar_t *text; iteminfo *subitems; };
 
 int curid = 0;
 
@@ -376,7 +376,7 @@ HMENU ProcessSubMenu(iteminfo *info, UINT idCmdFirst)
 		MENUITEMINFO mii = { sizeof(MENUITEMINFO) };
 		mii.fMask = MIIM_STRING | MIIM_ID;
 		mii.wID = info[i].id + idCmdFirst;
-		mii.dwTypeData = info[i].text;
+		mii.dwTypeData = const_cast<LPWSTR>(info[i].text);
 		if (info[i].subitems != nullptr)
 		{
 			mii.fMask |= MIIM_SUBMENU;
@@ -396,7 +396,7 @@ IFACEMETHODIMP CContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu, UINT 
 	MENUITEMINFO mii = { sizeof(mii) };
 	mii.fMask = MIIM_STRING | MIIM_ID | MIIM_SUBMENU;
 	mii.wID = idCmdFirst + curid;
-	mii.dwTypeData = L"FW-KENSC";
+	mii.dwTypeData = const_cast<LPWSTR>(L"FW-KENSC");
 	mii.hSubMenu = ProcessSubMenu(rootmenu, idCmdFirst);
 	if (!InsertMenuItem(hMenu, indexMenu, TRUE, &mii))
 	{
