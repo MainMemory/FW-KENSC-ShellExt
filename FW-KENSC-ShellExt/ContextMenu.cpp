@@ -5,13 +5,13 @@
 #include <Shellapi.h>
 #include <tchar.h>
 #include "ContextMenu.h"
-#include "FW-KENSC/kosinski.h"
-#include "FW-KENSC/enigma.h"
-#include "FW-KENSC/nemesis.h"
-#include "FW-KENSC/saxman.h"
-#include "FW-KENSC/comper.h"
-#include "FW-KENSC/rocket.h"
-#include "FW-KENSC/kosplus.h"
+#include "mdcomp/kosinski.hh"
+#include "mdcomp/enigma.hh"
+#include "mdcomp/nemesis.hh"
+#include "mdcomp/saxman.hh"
+#include "mdcomp/comper.hh"
+#include "mdcomp/rocket.hh"
+#include "mdcomp/kosplus.hh"
 #include "Twizzler/Twizzler.h"
 
 using std::ifstream;

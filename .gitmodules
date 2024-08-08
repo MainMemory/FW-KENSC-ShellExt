@@ -1,0 +1,12 @@
+[submodule "FW-KENSC-ShellExt/mdcomp"]
+	path = FW-KENSC-ShellExt/mdcomp
+	url = https://github.com/flamewing/mdcomp
+[submodule "FW-KENSC-ShellExt/boost/mpl"]
+	path = FW-KENSC-ShellExt/boost/mpl
+	url = https://github.com/boostorg/mpl/
+[submodule "FW-KENSC-ShellExt/boost/config"]
+	path = FW-KENSC-ShellExt/boost/config
+	url = https://github.com/boostorg/config
+[submodule "FW-KENSC-ShellExt/boost/preprocessor"]
+	path = FW-KENSC-ShellExt/boost/preprocessor
+	url = https://github.com/boostorg/preprocessor

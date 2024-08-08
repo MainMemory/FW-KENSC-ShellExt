@@ -83,28 +83,28 @@
     <ClCompile Include="ContextMenu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FW-KENSC\comper.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="FW-KENSC\enigma.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="FW-KENSC\kosinski.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="FW-KENSC\kosplus.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="FW-KENSC\nemesis.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="FW-KENSC\rocket.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="FW-KENSC\saxman.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Twizzler\Twizzler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mdcomp\src\lib\comper.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mdcomp\src\lib\enigma.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mdcomp\src\lib\kosinski.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mdcomp\src\lib\kosplus.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mdcomp\src\lib\nemesis.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mdcomp\src\lib\rocket.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mdcomp\src\lib\saxman.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
