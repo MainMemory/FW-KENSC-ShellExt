@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include <string>
 #include <fstream>
 #include <Shlwapi.h>

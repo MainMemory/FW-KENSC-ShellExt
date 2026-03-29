@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "ClassFactory.h"
 #include "ContextMenu.h"
 #include <new>
