@@ -21,12 +21,11 @@ CClassFactory::~CClassFactory()
 
 IFACEMETHODIMP CClassFactory::QueryInterface(REFIID riid, void **ppv)
 {
-    static const QITAB qit[] = 
-    {
+    static const auto qit = MakeQITAB({
         QITABENT(CClassFactory, IClassFactory),
         { 0 },
-    };
-    return QISearch(this, qit, riid, ppv);
+    });
+    return QISearch(this, std::data(qit), riid, ppv);
 }
 
 IFACEMETHODIMP_(ULONG) CClassFactory::AddRef()
