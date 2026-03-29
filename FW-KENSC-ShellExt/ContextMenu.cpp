@@ -10,6 +10,7 @@
 #include "mdcomp/nemesis.hh"
 #include "mdcomp/saxman.hh"
 #include "mdcomp/comper.hh"
+#include "mdcomp/comperx.hh"
 #include "mdcomp/rocket.hh"
 #include "mdcomp/kosplus.hh"
 #include "Twizzler/Twizzler.h"
@@ -29,6 +30,8 @@ LPCTSTR fileextentions[] = {
 	TEXT(".sax"),
 	TEXT(".comp"),
 	TEXT(".compm"),
+	TEXT(".compx"),
+	TEXT(".compxm"),
 	TEXT(".rock"),
 	TEXT(".rockm"),
 	TEXT(".kosp"),
@@ -69,9 +72,10 @@ iteminfo saxmenu[] = {
 	{ curid++, TEXT("Saxman - Compress (N&o Size)") },
 	{ -1 }
 };
-moduledmenu(comp, TEXT("Comper"));
-moduledmenu(rock, TEXT("Rocket"));
-moduledmenu(kosp, TEXT("Kosinski+"));
+moduledmenu(comp,  TEXT("Comper"));
+moduledmenu(compx, TEXT("Comper-X"));
+moduledmenu(rock,  TEXT("Rocket"));
+moduledmenu(kosp,  TEXT("Kosinski+"));
 
 const int END_OF_FW_KENSC = curid;
 
@@ -85,6 +89,7 @@ iteminfo rootmenu[] = {
 	{ curid++, TEXT("&Nemesis"), nemmenu },
 	{ curid++, TEXT("&Saxman"), saxmenu },
 	{ curid++, TEXT("&Comper"), compmenu },
+	{ curid++, TEXT("Comper-&X"), compxmenu },
 	{ curid++, TEXT("&Rocket"), rockmenu },
 	{ curid++, TEXT("Kosinski+"), kospmenu },
 	{ curid++, TEXT("&Twizzler"), twizmenu },
@@ -200,44 +205,65 @@ void do_compression_decompression(const int mode, LPCTSTR in)
 			comper::moduled_encode(instr, outstr);
 			break;
 		}
-		// Rocket
+		// Comper-X
 		case 16:
 		{
-			rocket::decode(instr, outstr);
+			comperx::decode(instr, outstr);
 			break;
 		}
 		case 17:
 		{
-			rocket::encode(instr, outstr);
+			comperx::encode(instr, outstr);
 			break;
 		}
 		case 18:
 		{
-			rocket::moduled_decode(instr, outstr);
+			comperx::moduled_decode(instr, outstr);
 			break;
 		}
 		case 19:
+		{
+			comperx::moduled_encode(instr, outstr);
+			break;
+		}
+		// Rocket
+		case 20:
+		{
+			rocket::decode(instr, outstr);
+			break;
+		}
+		case 21:
+		{
+			rocket::encode(instr, outstr);
+			break;
+		}
+		case 22:
+		{
+			rocket::moduled_decode(instr, outstr);
+			break;
+		}
+		case 23:
 		{
 			rocket::moduled_encode(instr, outstr);
 			break;
 		}
 		// Kosinski+
-		case 20:
+		case 24:
 		{
 			kosplus::decode(instr, outstr);
 			break;
 		}
-		case 21:
+		case 25:
 		{
 			kosplus::encode(instr, outstr);
 			break;
 		}
-		case 22:
+		case 26:
 		{
 			kosplus::moduled_decode(instr, outstr);
 			break;
 		}
-		case 23:
+		case 27:
 		{
 			kosplus::moduled_encode(instr, outstr);
 			break;

@@ -7,6 +7,7 @@ add_library(FW-KENSC-ShellExt SHARED
 	"FW-KENSC-ShellExt/ContextMenu.cpp"
 	"FW-KENSC-ShellExt/dllmain.cpp"
 	"FW-KENSC-ShellExt/mdcomp/src/lib/comper.cc"
+	"FW-KENSC-ShellExt/mdcomp/src/lib/comperx.cc"
 	"FW-KENSC-ShellExt/mdcomp/src/lib/enigma.cc"
 	"FW-KENSC-ShellExt/mdcomp/src/lib/kosinski.cc"
 	"FW-KENSC-ShellExt/mdcomp/src/lib/kosplus.cc"
