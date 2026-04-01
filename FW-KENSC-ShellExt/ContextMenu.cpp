@@ -282,18 +282,18 @@ void do_compression_decompression(const int mode, LPCTSTR in)
 
 		switch (mode)
 		{
-		case 24:
-		case 26:
+		case 28:
+		case 30:
 		{
 			TwizDec(buffer, filesize);
 			break;
 		}
-		case 25:
+		case 29:
 		{
 			TwizComp(buffer, filesize);
 			break;
 		}
-		case 27:
+		case 31:
 		{
 			TwizComp(buffer, filesize, true, 0x1000);
 			break;
